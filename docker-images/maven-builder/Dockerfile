@@ -1,4 +1,4 @@
-FROM registry.access.redhat.com/ubi8/openjdk-17:1.19
+FROM docker-private.infra.cloudera.com/cloudera_base/ubi8/openjdk-17:1.19-1
 
 LABEL org.opencontainers.image.source='https://github.com/strimzi/strimzi-kafka-operator'
 

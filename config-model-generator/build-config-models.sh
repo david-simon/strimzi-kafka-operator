@@ -6,6 +6,7 @@ source $(dirname $(realpath $0))/../tools/kafka-versions-tools.sh
 # Parse the Kafka versions file and get a list of version strings in an array 
 # called "versions"
 get_kafka_versions
+get_kafka_artifact_versions
 
 if [ "$1" = "build" ]
 then
@@ -17,10 +18,10 @@ then
     do
         mvn ${MVN_ARGS} verify exec:java \
         "-Pgenerate-model" \
-        "-Dkafka-metadata-version=$version" \
+        "-Dkafka-metadata-version=${version_artifact_versions[$version]}" \
         "-Dconfig-model-file=../cluster-operator/src/main/resources/kafka-${version}-config-model.json"
     done
 else
     # Clean up the last version in the file?
-    mvn ${MVN_ARGS} "-Pgenerate-model" clean "-Dkafka-metadata-version=${versions[-1]}"
+    mvn ${MVN_ARGS} "-Pgenerate-model" clean "-Dkafka-metadata-version=${version_artifact_versions[${versions[-1]}]}"
 fi

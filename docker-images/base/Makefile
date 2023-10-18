@@ -21,4 +21,6 @@ docker_sbom:
 docker_push_sbom:
 	# Do nothing
 
+docker_build : DOCKER_BUILD_ARGS := $(BASE_IMG_DOCKER_BUILD_ARGS)
+
 .PHONY: build clean release

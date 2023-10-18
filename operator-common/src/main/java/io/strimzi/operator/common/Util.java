@@ -36,6 +36,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.StringTokenizer;
 import java.util.TimeZone;
@@ -551,5 +552,33 @@ public class Util {
      */
     public static String encodeToBase64(String encode)  {
         return Base64.getEncoder().encodeToString(encode.getBytes(StandardCharsets.US_ASCII));
+    }
+
+    /**
+     * Finds the n-th index within a String, handling null. This method uses String.indexOf(String).
+     * A null String and if there is no match, will return Optional.empty().
+     *
+     * @param str       the String to check, may be null
+     * @param searchStr the String to find, may be null
+     * @param ordinal   the n-th searchStr to find
+     *
+     * @return          the n-th index of the search String, Optional.empty() if no match or null string input
+     */
+    public static Optional<Integer> ordinalIndexOf(String str, String searchStr, int ordinal) {
+        if (str == null || searchStr == null || ordinal <= 0) {
+            return Optional.empty();
+        }
+        if (searchStr.isEmpty()) {
+            return Optional.of(0);
+        }
+
+        int index = str.indexOf(searchStr);
+        while (--ordinal > 0 && index != -1) {
+            index = str.indexOf(searchStr, index + 1);
+        }
+
+        return index == -1
+                ? Optional.empty()
+                : Optional.of(index);
     }
 }

@@ -22,6 +22,8 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.aMapWithSize;
 import static org.hamcrest.Matchers.hasEntry;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class UtilTest {
@@ -185,5 +187,30 @@ public class UtilTest {
 
         selector = new LabelSelectorBuilder().withMatchLabels(Map.of("label2", "value2", "label1", "value1", "label3", "value3")).build();
         assertThat(matchesSelector(selector, testResource), is(false));
+    }
+
+    @Test
+    public void testOrdinalIndexOfWithGoodValues() {
+        String str0 = "3.6.0.1.0.0-b176";
+        String str1 = "3.6.0.1";
+
+        assertEquals(5, Util.ordinalIndexOf(str0, ".", 3).orElseThrow(AssertionError::new));
+        assertEquals(0, Util.ordinalIndexOf(str0, "", 3).orElseThrow(AssertionError::new));
+        assertEquals(5, Util.ordinalIndexOf(str1, ".", 3).orElseThrow(AssertionError::new));
+    }
+
+    @Test
+    public void testOrdinalIndexOfWithExceptions() {
+        String str0 = "3.6.0";
+        String str1 = "3.6";
+        String str2 = "3";
+
+        assertFalse(Util.ordinalIndexOf(str0, ".", 3).isPresent());
+        assertFalse(Util.ordinalIndexOf(str1, ".", 3).isPresent());
+        assertFalse(Util.ordinalIndexOf(str2, ".", 3).isPresent());
+        assertFalse(Util.ordinalIndexOf("", ".", 3).isPresent());
+        assertFalse(Util.ordinalIndexOf(null, ".", 3).isPresent());
+        assertFalse(Util.ordinalIndexOf(str0, ".", -1).isPresent());
+        assertFalse(Util.ordinalIndexOf(str0, null, 3).isPresent());
     }
 }

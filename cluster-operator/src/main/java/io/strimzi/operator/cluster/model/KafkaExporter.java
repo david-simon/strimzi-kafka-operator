@@ -217,7 +217,8 @@ public class KafkaExporter extends AbstractModel {
         List<EnvVar> varList = new ArrayList<>();
 
         varList.add(ContainerUtils.createEnvVar(ENV_VAR_KAFKA_EXPORTER_LOGGING, Integer.toString(loggingMapping(exporterLogging))));
-        varList.add(ContainerUtils.createEnvVar(ENV_VAR_KAFKA_EXPORTER_KAFKA_VERSION, version));
+        varList.add(ContainerUtils.createEnvVar(ENV_VAR_KAFKA_EXPORTER_KAFKA_VERSION,
+                version.substring(0, Util.ordinalIndexOf(version, ".", 3).orElse(version.length()))));
         varList.add(ContainerUtils.createEnvVar(ENV_VAR_KAFKA_EXPORTER_GROUP_REGEX, groupRegex));
         varList.add(ContainerUtils.createEnvVar(ENV_VAR_KAFKA_EXPORTER_TOPIC_REGEX, topicRegex));
         if (groupExcludeRegex != null) {

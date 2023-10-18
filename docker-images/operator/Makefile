@@ -1,4 +1,4 @@
-PROJECT_NAME := operator
+PROJECT_NAME := kafka-operator
 jar_version := $(shell cat ../../release.version)
 topic_operator_dist := ../artifacts/binaries/topic-operator-$(jar_version)-dist.zip
 user_operator_dist := ../artifacts/binaries/user-operator-$(jar_version)-dist.zip

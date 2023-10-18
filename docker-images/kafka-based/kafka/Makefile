@@ -39,9 +39,9 @@ clean:
 	unzip -qo ../../artifacts/binaries/kafka-thirdparty-libs/cc.zip -d tmp/cc
 	touch .thirdparty-libs-cc.tmp
 
-.kafka-$(KAFKA_VERSION).tmp: ../../artifacts/binaries/kafka/archives/kafka_2.13-$(KAFKA_VERSION).tgz
+.kafka-$(KAFKA_VERSION).tmp: ../../artifacts/binaries/kafka/archives/kafka_2.13-$(KAFKA_VERSION)*.tgz
 	test -d tmp/$(KAFKA_VERSION) || mkdir -p tmp/$(KAFKA_VERSION)
-	tar xvfz ../../artifacts/binaries/kafka/archives/kafka_2.13-$(KAFKA_VERSION).tgz -C tmp/$(KAFKA_VERSION) --strip-components=1
+	tar xvfz ../../artifacts/binaries/kafka/archives/kafka_2.13-$(KAFKA_VERSION)*.tgz -C tmp/$(KAFKA_VERSION) --strip-components=1
 	touch .kafka-$(KAFKA_VERSION).tmp
 
 .kafka-$(KAFKA_VERSION)-ignorelist.tmp: ../../artifacts/binaries/kafka/$(KAFKA_VERSION).ignorelist

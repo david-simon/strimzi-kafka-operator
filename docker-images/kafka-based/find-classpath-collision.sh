@@ -4,6 +4,10 @@ image_jar_dir=$2 #/opt/kafka/libs
 ignorelist_file=$3
 DOCKER_CMD=${DOCKER_CMD:-docker}
 
+if [[ "${SKIP_COLLISION_CHECK}" == "true" ]]; then
+  exit 0
+fi
+
 jars_dir=$(mktemp -d)
 classes_root=$(mktemp -d)
 exit_handler() {

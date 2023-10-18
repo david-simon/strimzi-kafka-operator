@@ -108,6 +108,17 @@ function fetch_and_unpack_kafka_binaries {
             download_kafka_binaries_from_cdn "$binary_file_url" "$binary_file_path"
         fi
 
+        if [[ "${binary_file_path}" == *"SNAPSHOT"* ]]
+        then
+            if tar -ztf "${binary_file_path}" &> /dev/null
+            then
+                do_checksum=0
+            else
+                echo "Snapshot tgz was not downloaded successfully, exiting."
+                exit 1
+            fi
+        fi
+
         # If we haven't already checksum'd the file do it now before the build.
         if [ $do_checksum -gt 0 ]
         then

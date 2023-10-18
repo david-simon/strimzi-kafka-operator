@@ -44,6 +44,7 @@ function build {
     
     local targets=$*
     local tag="${DOCKER_TAG:-latest}"
+    local images_yaml=../../cloudera/docker/docker_images.yaml
 
     for kafka_version in "${!version_checksums[@]}"
     do
@@ -62,6 +63,10 @@ function build {
                 BUILD_TAG="build-kafka-${kafka_version}" \
                 KAFKA_VERSION="${kafka_version}" \
                 THIRD_PARTY_LIBS="${lib_directory}"
+
+            if [[ "$targets" == "docker_push" && "${CLOUDERA_BUILD}" == "true" ]]; then
+              yq ".docker_images += {\"kafka-${kafka_version}\": \"${DOCKER_REGISTRY}/${DOCKER_ORG}/kafka:${tag}-kafka-${kafka_version}\"}" -i $images_yaml
+            fi
         done
     done
 }

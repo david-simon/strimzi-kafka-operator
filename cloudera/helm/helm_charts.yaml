@@ -1,0 +1,3 @@
+charts_dir: __CHART_DIR__
+helm_charts:
+  chart_1: strimzi-kafka-operator-__CHART_VERSION__.tgz

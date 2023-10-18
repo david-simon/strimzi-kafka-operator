@@ -22,6 +22,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 /**
@@ -29,6 +30,8 @@ import java.util.stream.Collectors;
  */
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class KafkaVersion implements Comparable<KafkaVersion> {
+
+    private static final Pattern NUMBERS_AND_ALPHAS_SPLITTER_PATTERN = Pattern.compile("[^0-9a-zA-Z]|(?<=[a-zA-Z])(?=\\d)|(?<=\\d)(?=[a-zA-Z])");
 
     /**
      * Parse the version information present in the {@code /kafka-versions} classpath resource.
@@ -528,14 +531,39 @@ public class KafkaVersion implements Comparable<KafkaVersion> {
      * 1 if version1 &gt; version2.
      */
     public static int compareDottedVersions(String version1, String version2) {
-        String[] components = version1.split("\\.");
-        String[] otherComponents = version2.split("\\.");
-        for (int i = 0; i < Math.min(components.length, otherComponents.length); i++) {
+        // checking the first three components of the verisons first (they must be digits)
+        int semVerLimit = 4;
+        String[] components = version1.split("\\.", semVerLimit);
+        String[] otherComponents = version2.split("\\.", semVerLimit);
+        int shorterLength = Math.min(components.length, otherComponents.length);
+        for (int i = 0; i < Math.min(shorterLength, semVerLimit - 1); i++) {
             int x = Integer.parseInt(components[i]);
             int y = Integer.parseInt(otherComponents[i]);
             int compared = Integer.compare(x, y);
             if (compared != 0) {
                 return compared;
+            }
+        }
+        // checking the further part of the versions, where letters could come in
+        // comparing numeric groups and alpha groups one by one
+        // when it is not a number lexicographically compared
+        if (semVerLimit <= shorterLength) {
+            String[] versionEndings = NUMBERS_AND_ALPHAS_SPLITTER_PATTERN.split(components[3]);
+            String[] otherVersionEndings = NUMBERS_AND_ALPHAS_SPLITTER_PATTERN.split(otherComponents[3]);
+            for (int i = 0; i < Math.min(versionEndings.length, otherVersionEndings.length); i++) {
+                String versionEndingComponent = versionEndings[i];
+                String otherVersionEndingComponent = otherVersionEndings[i];
+                int compared;
+                try {
+                    int x = Integer.parseInt(versionEndingComponent);
+                    int y = Integer.parseInt(otherVersionEndingComponent);
+                    compared = Integer.compare(x, y);
+                } catch (NumberFormatException e) {
+                    compared = versionEndingComponent.compareTo(otherVersionEndingComponent);
+                }
+                if (compared != 0) {
+                    return compared;
+                }
             }
         }
         // mismatch was not found, but the versions are of different length, e.g. 2.8 and 2.8.0

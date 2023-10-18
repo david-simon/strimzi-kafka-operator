@@ -75,6 +75,18 @@ function get_kafka_formats {
     eval formats="($(yq eval '.[] | select(.supported == true) | .format' "$VERSIONS_FILE"))"
 }
 
+function get_kafka_artifact_versions {
+    eval artifact_versions="($(yq eval '.[] | select(.supported == true) | (.artifactVersion // .version)' "$VERSIONS_FILE"))"
+
+    get_kafka_versions
+
+    declare -Ag version_artifact_versions
+    for i in "${!versions[@]}"
+    do
+        version_artifact_versions[${versions[$i]}]=${artifact_versions[$i]}
+    done
+}
+
 function get_kafka_does_not_support {
     eval does_not_support="($(yq eval '.[] | select(.supported == true) | .unsupported-features' "$VERSIONS_FILE"))"
 

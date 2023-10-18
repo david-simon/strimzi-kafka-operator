@@ -116,6 +116,8 @@ public class KafkaVersionTest {
 
     @ParallelTest
     public void compareVersionLowerTest() {
+        assertThat(KafkaVersion.compareDottedVersions("3.6.0.1.0.0-b90", "3.6.0.1.0.0-b100"), lessThan(0));
+        assertThat(KafkaVersion.compareDottedVersions("3.6.0.1.0.0-b123", "3.6.0.1.0.0-b321"), lessThan(0));
         assertThat(KafkaVersion.compareDottedVersions(KafkaVersionTestUtils.PREVIOUS_KAFKA_VERSION, KafkaVersionTestUtils.LATEST_KAFKA_VERSION), lessThan(0));
     }
 

@@ -1,4 +1,4 @@
-FROM registry.access.redhat.com/ubi8/ubi-minimal:latest
+FROM docker-private.infra.cloudera.com/cloudera_base/ubi8/ubi-minimal:8.8-1072.1696517598
 
 LABEL org.opencontainers.image.source='https://github.com/strimzi/strimzi-kafka-operator'
 
