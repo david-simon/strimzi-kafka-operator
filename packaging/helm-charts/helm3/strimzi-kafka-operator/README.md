@@ -98,7 +98,7 @@ the documentation for more details.
 | `defaultImageTag`                           | Default image tag for all the images except Kafka Bridge                        | `0.40.0`                     |
 | `image.registry`                            | Override default Cluster Operator image registry                                | `nil`                        |
 | `image.repository`                          | Override default Cluster Operator image repository                              | `nil`                        |
-| `image.name`                                | Cluster Operator image name                                                     | `cluster-operator`           |
+| `image.name`                                | Cluster Operator image name                                                     | `kafka-operator`                 |
 | `image.tag`                                 | Override default Cluster Operator image tag                                     | `nil`                        |
 | `image.digest`                              | Override Cluster Operator image tag with digest                                 | `nil`                        |
 | `image.imagePullPolicy`                     | Image pull policy for all pods deployed by Cluster Operator                     | `IfNotPresent`               |
@@ -143,12 +143,12 @@ the documentation for more details.
 | `cruiseControl.image.digest`                | Override Cruise Control image tag with digest                                   | `nil`                        |
 | `topicOperator.image.registry`              | Override default Topic Operator image registry                                  | `nil`                        |
 | `topicOperator.image.repository`            | Override default  Topic Operator image repository                               | `nil`                        |
-| `topicOperator.image.name`                  | Topic Operator image name                                                       | `operator`                   |
+| `topicOperator.image.name`                  | Topic Operator image name                                                       | `kafka-operator`             |
 | `topicOperator.image.tag`                   | Override default Topic Operator image tag                                       | `nil`                        |
 | `topicOperator.image.digest`                | Override Topic Operator image tag with digest                                   | `nil`                        |
 | `userOperator.image.registry`               | Override default User Operator image registry                                   | `nil`                        |
 | `userOperator.image.repository`             | Override default User Operator image repository                                 | `nil`                        |
-| `userOperator.image.name`                   | User Operator image name                                                        | `operator`                   |
+| `userOperator.image.name`                   | User Operator image name                                                        | `kafka-operator`             |
 | `userOperator.image.tag`                    | Override default User Operator image tag                                        | `nil`                        |
 | `userOperator.image.digest`                 | Override User Operator image tag with digest                                    | `nil`                        |
 | `kafkaInit.image.registry`                  | Override default Init Kafka image registry                                      | `nil`                        |
