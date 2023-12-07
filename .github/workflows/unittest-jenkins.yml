@@ -1,0 +1,33 @@
+name: Unit Tests
+on:
+  pull_request:
+jobs:
+  unit_test:
+    runs-on: ci_builds
+    steps:
+      - name: Setup secrets
+        id: secrets
+        uses: Kitchen/RE-thirdparty-actions/actions/vault@main
+        with:
+          tlsSkipVerify: true
+          url: https://re-vault.infra.cloudera.com/
+          method: kubernetes
+          path: rke_re_jenkins
+          role: internal
+          secrets: |
+            internal/data/github-actions/jenkins_github_token JENKINS_GH_USER_TOKEN | JENKINS_GH_USER_TOKEN ;
+            internal/data/cmf-jenkins api-token | JENKINS_API_TOKEN ;
+      - name: Check out repository
+        uses: actions/checkout@v3
+      - name: Trigger Jenkins Job
+        uses: CDH/kafka/.github/actions/trigger-jenkins@csm-operator-main
+        with:
+          url: https://master-01.jenkins.cloudera.com/
+          username: csm.jenkins
+          token: ${{ steps.secrets.outputs.JENKINS_API_TOKEN }}
+          job: Strimzi-GitHub-Pull-Request-Unit
+          timeout: 180
+          poll_interval: 30
+          parameters: '{"ORG":"${{ github.repository_owner }}","REPO":"${{ github.event.repository.name }}","SHA1":"${{ github.sha }}"}'
+          github_token: ${{ steps.secrets.outputs.JENKINS_GH_USER_TOKEN }}
+          pr: ${{ github.event.number }}

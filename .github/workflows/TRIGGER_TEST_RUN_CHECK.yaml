@@ -1,0 +1,10 @@
+name: Trigger_ART_Test_Run_Check
+on:
+  pull_request_review:
+    types: [submitted]
+concurrency:
+  group: ${{ github.repository }}-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  call-workflow-check-test-run:
+    uses: CDF/csm-operator/.github/workflows/ART_TEST_RUN_CHECK.yaml@csm-operator-main

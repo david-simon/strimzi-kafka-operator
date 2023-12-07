@@ -1,0 +1,9 @@
+name: CI_App_Build_ART
+on:
+  pull_request:
+jobs:
+  CI_BUILD_APP:
+    uses: Kitchen/RE-github-workflows/.github/workflows/CI_APP_BUILDS.yaml@main
+  CI_TRIGGER_ART:
+    needs: [CI_BUILD_APP]
+    uses: Kitchen/RE-github-workflows/.github/workflows/CI_TRIGGER_ART.yaml@main
