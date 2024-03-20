@@ -16,6 +16,7 @@ import org.junit.platform.launcher.TestPlan;
 
 import java.util.Arrays;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 public class ExecutionListener implements TestExecutionListener {
     private static final Logger LOGGER = LogManager.getLogger(TestExecutionListener.class);
@@ -59,6 +60,11 @@ public class ExecutionListener implements TestExecutionListener {
      */
     public static boolean hasSuiteParallelOrIsolatedTest(final ExtensionContext extensionContext) {
         Set<TestIdentifier> testCases = testPlan.getChildren(extensionContext.getUniqueId());
+
+        // TODO there is little information about a bug related to test retries and this code
+        // might need more logging when the issue occurs again
+        LOGGER.info("Received the following test cases for parent {}: [{}]", extensionContext.getUniqueId(),
+                testCases.stream().map(TestIdentifier::getDisplayName).collect(Collectors.joining(", ")));
 
         for (TestIdentifier testIdentifier : testCases) {
             for (TestTag testTag : testIdentifier.getTags()) {
