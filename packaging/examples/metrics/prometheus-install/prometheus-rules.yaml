@@ -89,6 +89,22 @@ spec:
       annotations:
         summary: 'One or more Kafka containers restarted too often'
         description: 'One or more Kafka containers were restarted too often within the last 5 minutes'
+    - alert: KafkaNetworkProcessorAvgIdle
+      expr: kafka_network_processor_idle_percent < 0.3
+      for: 5m
+      labels:
+        severity: warning
+      annotations:
+        summary: 'Less than 30% of network processor capacity available'
+        description: 'Less than 30% of network processor capacity available ({{ $value }} of the total 1). Consider increasing value of num.network.threads property for the brokers.'
+    - alert: KafkaRequestHandlerAvgIdle
+      expr: kafka_server_kafkarequesthandlerpool_requesthandleravgidle_percent < 0.3
+      for: 5m
+      labels:
+        severity: warning
+      annotations:
+        summary: 'Less than 30% of request handler capacity available'
+        description: 'Less than 30% of request handler capacity available ({{ $value }} of the total 1). Consider increasing value of num.io.threads property for the brokers.'
   - name: zookeeper
     rules:
     - alert: AvgRequestLatency
@@ -149,6 +165,14 @@ spec:
       annotations:
         summary: 'Container user-operator in Entity Operator pod down or in CrashLookBackOff status'
         description: 'Container user-operator in Entity Operator pod have been down or in CrashLookBackOff status for 3 minutes'
+    - alert: EntityOperatorTlsSidecarContainerDown
+      expr: absent(container_last_seen{container="tls-sidecar",pod=~".+-entity-operator-.+"})
+      for: 3m
+      labels:
+        severity: major
+      annotations:
+        summary: 'Container tls-sidecar Entity Operator pod down or in CrashLookBackOff status'
+        description: 'Container tls-sidecar in Entity Operator pod have been down or in CrashLookBackOff status for 3 minutes'
   - name: connect
     rules:
     - alert: ConnectContainersDown
