@@ -28,7 +28,7 @@
 #    kafkaKRaftBefore: path to Kafka and KafkaNodePool resources (KRaft mode), collected in one file, in the version of Strimzi, from which we are doing the upgrade
 #    kafkaKRaftAfter: path to Kafka and KafkaNodePool resources (KRaft mode), collected in one file, in the version of Strimzi, to which we are doing the upgrade
 #  --- Structure ---
-
+# TODO: when releasing CSM Operator 1.1.0 and 1.2.0, update this file to configure upgrade tests properly
 - fromVersion: 0.39.0
   fromExamples: strimzi-0.39.0
   oldestKafka: 3.6.0

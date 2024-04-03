@@ -15,13 +15,16 @@ But these are some of the tasks you usually have to do.
   * Update the Kafka versions and protocol versions in the documentation `attributes.adoc`
   * If needed, update the examples (only in the `packaging/examples` directory):
     * The `version` and the `inter.broker.protocol.version` fields
+      * For the version, use the following:
+        `kafka_version=$(yq '.[] | select(.default == true) | .version' kafka-versions.yaml)`
+        `find packaging/examples -name '*.yaml' -exec yq -i "with(select(.spec.version);.spec.version=\"${kafka_version}\") | with(select(.spec.kafka.version);.spec.kafka.version=\"${kafka_version}\")" {} \;`
     * The Docker image tag in the Kafka connect Build example
   * Update the main `pom.xml` to use the latest Kafka version in the operator
   * Update `systemtest/src/test/resources/upgrade/BundleUpgrade.yaml` with the new version
   * Update protocol versions in `cluster-operator/src/test/java/io/strimzi/operator/cluster/model/KafkaConfigurationTests.java` if needed
 * Make sure the `cluster-operator/src/test/java/io/strimzi/operator/cluster/KafkaVersionTestUtils.java` is up-to-date
 * If you are adding a release candidate which is not yet published to Maven central, make sure to update the `ST_FILE_PLUGIN_URL_DEFAULT` field in `systemtest/src/main/java/io/strimzi/systemtest/Environment.java` to get the system tests to pass.
-* Run `make all` to update all the installation files, generated docs files, Helm chart etc.
+* Run `SKIP_COLLISION_CHECK=true MVN_ARGS='-DskipTests' make all` to update all the installation files, generated docs files, Helm chart etc.
   You will need to commit also all the files it updates before opening a PR.
 * Add a `CHANGELOG.md` record
 * Run unit tests
