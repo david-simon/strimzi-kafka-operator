@@ -245,7 +245,7 @@ class LogSettingST extends AbstractST {
         }, Environment.TEST_SUITE_NAMESPACE);
 
         if (!Environment.isKRaftModeEnabled()) {
-            RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(Environment.TEST_SUITE_NAMESPACE, controllerSelector, 1, controllerPods);
+            RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(Environment.TEST_SUITE_NAMESPACE, controllerSelector, 3, controllerPods);
         }
         RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(Environment.TEST_SUITE_NAMESPACE, brokerSelector, 3, brokerPods);
         DeploymentUtils.waitTillDepHasRolled(Environment.TEST_SUITE_NAMESPACE, eoDepName, 1, eoPods);

@@ -814,7 +814,7 @@ class KafkaST extends AbstractST {
         }, testStorage.getNamespaceName());
 
         LOGGER.info("Waiting for rolling update of ZooKeeper and Kafka");
-        RollingUpdateUtils.waitTillComponentHasRolled(testStorage.getNamespaceName(), testStorage.getControllerSelector(), 1, controllerPods);
+        RollingUpdateUtils.waitTillComponentHasRolled(testStorage.getNamespaceName(), testStorage.getControllerSelector(), 3, controllerPods);
         RollingUpdateUtils.waitTillComponentHasRolled(testStorage.getNamespaceName(), testStorage.getBrokerSelector(), 3, brokerPods);
 
         LOGGER.info("---> PVC (both labels and annotation) <---");

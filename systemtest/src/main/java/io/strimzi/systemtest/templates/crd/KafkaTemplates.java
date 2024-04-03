@@ -273,6 +273,18 @@ public class KafkaTemplates {
                     // Extend active users tasks
                     .addToConfig("max.active.user.tasks", 10)
                 .endCruiseControl()
+                .editKafka()
+                    .withNewPersistentClaimStorage()
+                        .withSize("1Gi")
+                        .withDeleteClaim(true)
+                    .endPersistentClaimStorage()
+                .endKafka()
+                .editZookeeper()
+                    .withNewPersistentClaimStorage()
+                        .withSize("1Gi")
+                        .withDeleteClaim(true)
+                    .endPersistentClaimStorage()
+                .endZookeeper()
             .endSpec();
     }
 
@@ -292,6 +304,7 @@ public class KafkaTemplates {
     }
 
     private static KafkaBuilder defaultKafkaWithoutNodePools(Kafka kafka, String clusterName, int kafkaReplicas, int zookeeperReplicas) {
+        zookeeperReplicas = Math.max(3, zookeeperReplicas);
         KafkaBuilder kb = new KafkaBuilder(kafka)
             .withNewMetadata()
                 .withName(clusterName)
