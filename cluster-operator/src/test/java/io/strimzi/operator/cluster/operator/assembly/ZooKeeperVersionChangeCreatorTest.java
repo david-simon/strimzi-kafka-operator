@@ -31,6 +31,7 @@ import io.vertx.junit5.Checkpoint;
 import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
@@ -840,6 +841,7 @@ public class ZooKeeperVersionChangeCreatorTest {
     //////////
 
     @Test
+    @Disabled // TODO: Remove this when we have upgrade support (CSMDS-298)
     public void testDowngradeWithAllVersions(VertxTestContext context) {
         String oldKafkaVersion = KafkaVersionTestUtils.LATEST_KAFKA_VERSION;
         String oldInterBrokerProtocolVersion = KafkaVersionTestUtils.PREVIOUS_PROTOCOL_VERSION;
@@ -870,6 +872,7 @@ public class ZooKeeperVersionChangeCreatorTest {
     }
 
     @Test
+    @Disabled // TODO: Remove this when we have upgrade support (CSMDS-298)
     public void testDowngradeWithoutSubversionsButWithOldSubversionsInKubeResources(VertxTestContext context) {
         String oldKafkaVersion = KafkaVersionTestUtils.LATEST_KAFKA_VERSION;
         String oldInterBrokerProtocolVersion = KafkaVersionTestUtils.PREVIOUS_PROTOCOL_VERSION;
@@ -898,6 +901,7 @@ public class ZooKeeperVersionChangeCreatorTest {
     }
 
     @Test
+    @Disabled // TODO: Remove this when we have upgrade support (CSMDS-298)
     public void testDowngradeWithOlderSubversions(VertxTestContext context) {
         String oldKafkaVersion = KafkaVersionTestUtils.LATEST_KAFKA_VERSION;
         String oldInterBrokerProtocolVersion = "2.8";
@@ -928,6 +932,7 @@ public class ZooKeeperVersionChangeCreatorTest {
     }
 
     @Test
+    @Disabled // TODO: Remove this when we have upgrade support (CSMDS-298)
     public void testDowngradeWithAllVersionsAndRecovery(VertxTestContext context) {
         String oldKafkaVersion = KafkaVersionTestUtils.LATEST_KAFKA_VERSION;
         String oldInterBrokerProtocolVersion = KafkaVersionTestUtils.PREVIOUS_PROTOCOL_VERSION;
@@ -959,6 +964,7 @@ public class ZooKeeperVersionChangeCreatorTest {
 
     // Everything already to the new protocol version => downgrade should not be possible
     @Test
+    @Disabled // TODO: Remove this when we have upgrade support (CSMDS-298)
     public void testDowngradeFailsWithNewProtocolVersions(VertxTestContext context) {
         String oldKafkaVersion = KafkaVersionTestUtils.LATEST_KAFKA_VERSION;
         String oldInterBrokerProtocolVersion = KafkaVersionTestUtils.LATEST_PROTOCOL_VERSION;
@@ -988,6 +994,7 @@ public class ZooKeeperVersionChangeCreatorTest {
 
     // Some pods were already rolled to the new protocol version => downgrade should not be possible
     @Test
+    @Disabled // TODO: Remove this when we have upgrade support (CSMDS-298)
     public void testDowngradeFailsWithNewProtocolVersionInOnePod(VertxTestContext context) {
         String oldKafkaVersion = KafkaVersionTestUtils.LATEST_KAFKA_VERSION;
         String oldInterBrokerProtocolVersion = KafkaVersionTestUtils.LATEST_PROTOCOL_VERSION;

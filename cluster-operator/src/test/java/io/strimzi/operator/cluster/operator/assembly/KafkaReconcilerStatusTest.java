@@ -49,6 +49,7 @@ import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
@@ -266,6 +267,7 @@ public class KafkaReconcilerStatusTest {
     }
 
     @Test
+    @Disabled // TODO: Remove this when we support multiple versions (CSMDS-298)
     public void testKafkaReconcilerStatusCustomKafkaVersion(VertxTestContext context) {
         Kafka kafka = new KafkaBuilder(KAFKA)
                 .editOrNewSpec()

@@ -40,6 +40,7 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInfo;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -51,6 +52,7 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 @ExtendWith(VertxExtension.class)
+@Disabled // TODO: Remove this when we have upgrade support (CSMDS-298)
 public class KafkaUpgradeDowngradeMockTest {
     private static final Logger LOGGER = LogManager.getLogger(KafkaUpgradeDowngradeMockTest.class);
 
