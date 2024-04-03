@@ -46,6 +46,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static io.strimzi.systemtest.TestConstants.BRIDGE;
+import static io.strimzi.systemtest.TestConstants.CLOUDERA_TAG_PREFIX;
 import static io.strimzi.systemtest.TestConstants.CONNECT;
 import static io.strimzi.systemtest.TestConstants.CONNECTOR_OPERATOR;
 import static io.strimzi.systemtest.TestConstants.CONNECT_COMPONENTS;
@@ -110,6 +112,7 @@ public abstract class AbstractNamespaceST extends AbstractST {
      *  - bridge
      */
     @ParallelTest
+    @Tag(CLOUDERA_TAG_PREFIX + BRIDGE)
     final void testKafkaBridgeInDifferentNamespaceFromCO(ExtensionContext extensionContext) {
         final TestStorage testStorage = new TestStorage(extensionContext, MAIN_TEST_NAMESPACE);
         final String bridgeName = testStorage.getClusterName() + "-bridge";

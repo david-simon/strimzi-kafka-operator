@@ -36,6 +36,8 @@ import org.junit.jupiter.api.Tag;
 import java.util.HashMap;
 import java.util.Map;
 
+import static io.strimzi.systemtest.TestConstants.CLOUDERA_TAG_PREFIX;
+import static io.strimzi.systemtest.TestConstants.CONNECT;
 import static io.strimzi.systemtest.TestConstants.REGRESSION;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 
@@ -45,6 +47,7 @@ public class ConfigProviderST extends AbstractST {
     private static final Logger LOGGER = LogManager.getLogger(ConfigProviderST.class);
 
     @ParallelNamespaceTest
+    @Tag(CLOUDERA_TAG_PREFIX + CONNECT)
     void testConnectWithConnectorUsingConfigAndEnvProvider() {
         final TestStorage testStorage = new TestStorage(ResourceManager.getTestContext());
         final String producerName = "producer-" + ClientUtils.generateRandomConsumerGroup();

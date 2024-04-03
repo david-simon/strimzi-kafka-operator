@@ -288,6 +288,16 @@
     </build>
 
     <profiles>
+        <profile>
+            <id>cloudera</id>
+            <properties>
+                <skipTests>false</skipTests>
+                <excludedGroups>
+                    bridge, connect, connectcomponents, connectoroperator, mirrormaker, mirrormaker2, upgrade, loadbalancer, networkpolicies,
+                    cloudera_bridge, cloudera_connect, cloudera_mirrormaker, cloudera_mirrormaker2
+                </excludedGroups>
+            </properties>
+        </profile>
 
         <profile>
             <id>none</id>

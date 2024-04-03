@@ -23,7 +23,7 @@ import io.strimzi.systemtest.resources.crd.KafkaNodePoolResource;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.systemtest.resources.crd.StrimziPodSetResource;
 import io.strimzi.systemtest.storage.TestStorage;
-import io.strimzi.systemtest.templates.crd.KafkaBridgeTemplates;
+//import io.strimzi.systemtest.templates.crd.KafkaBridgeTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaNodePoolTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTemplates;
 import io.strimzi.systemtest.utils.ClientUtils;
@@ -256,6 +256,6 @@ class RecoveryST extends AbstractST {
             )
         );
         resourceManager.createResourceWithWait(KafkaTemplates.kafkaPersistent(sharedClusterName, KAFKA_REPLICAS).build());
-        resourceManager.createResourceWithWait(KafkaBridgeTemplates.kafkaBridge(sharedClusterName, KafkaResources.plainBootstrapAddress(sharedClusterName), 1).build());
+//        resourceManager.createResourceWithWait(KafkaBridgeTemplates.kafkaBridge(sharedClusterName, KafkaResources.plainBootstrapAddress(sharedClusterName), 1).build());
     }
 }

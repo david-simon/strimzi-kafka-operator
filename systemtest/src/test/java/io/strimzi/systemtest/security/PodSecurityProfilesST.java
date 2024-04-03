@@ -49,6 +49,11 @@ import java.util.Collections;
 import java.util.List;
 
 import static io.strimzi.systemtest.TestConstants.ACCEPTANCE;
+import static io.strimzi.systemtest.TestConstants.BRIDGE;
+import static io.strimzi.systemtest.TestConstants.CLOUDERA_TAG_PREFIX;
+import static io.strimzi.systemtest.TestConstants.CONNECT;
+import static io.strimzi.systemtest.TestConstants.MIRROR_MAKER;
+import static io.strimzi.systemtest.TestConstants.MIRROR_MAKER2;
 import static io.strimzi.systemtest.TestConstants.POD_SECURITY_PROFILES_RESTRICTED;
 import static io.strimzi.systemtest.TestConstants.REGRESSION;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
@@ -95,6 +100,10 @@ public class PodSecurityProfilesST extends AbstractST {
      *  - security-profiles
      */
     @Tag(ACCEPTANCE)
+    @Tag(CLOUDERA_TAG_PREFIX + CONNECT)
+    @Tag(CLOUDERA_TAG_PREFIX + MIRROR_MAKER)
+    @Tag(CLOUDERA_TAG_PREFIX + MIRROR_MAKER2)
+    @Tag(CLOUDERA_TAG_PREFIX + BRIDGE)
     @KindIPv6NotSupported("Kafka Connect Build using the Kaniko builder is not available under the restricted security profile")
     @ParallelNamespaceTest
     @RequiredMinKubeOrOcpBasedKubeVersion(kubeVersion = 1.23, ocpBasedKubeVersion = 1.24)

@@ -21,11 +21,14 @@ import io.strimzi.systemtest.templates.crd.KafkaTopicTemplates;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 
+import static io.strimzi.systemtest.TestConstants.CLOUDERA_TAG_PREFIX;
+import static io.strimzi.systemtest.TestConstants.CONNECT;
 import static io.strimzi.systemtest.TestConstants.HELM;
 import static io.strimzi.systemtest.TestConstants.REGRESSION;
 
 @Tag(HELM)
 @Tag(REGRESSION)
+@Tag(CLOUDERA_TAG_PREFIX + CONNECT)
 class HelmChartST extends AbstractST {
 
     @IsolatedTest

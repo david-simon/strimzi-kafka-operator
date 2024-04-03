@@ -336,7 +336,7 @@ public class KafkaUtils {
         try {
             try (InputStream in = new FileInputStream(name)) {
                 ConfigModels configModels = new ObjectMapper().readValue(in, ConfigModels.class);
-                if (!kafkaVersion.equals(configModels.getVersion())) {
+                if (!configModels.getVersion().startsWith(kafkaVersion)) {
                     throw new RuntimeException("Incorrect version");
                 }
                 return configModels.getConfigs();

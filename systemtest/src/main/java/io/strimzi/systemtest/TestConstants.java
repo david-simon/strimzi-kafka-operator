@@ -219,6 +219,7 @@ public interface TestConstants {
     String DONT_USE_UNIDIRECTIONAL_TOPIC_OPERATOR = "-UnidirectionalTopicOperator";
     String USE_UNIDIRECTIONAL_TOPIC_OPERATOR = "+UnidirectionalTopicOperator";
 
+    String CLOUDERA_TAG_PREFIX = "cloudera_";
     /**
      * Default value which allows execution of tests with any tags
      */

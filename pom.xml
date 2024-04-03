@@ -92,6 +92,8 @@
         <maven.compiler.source>17</maven.compiler.source>
         <maven.compiler.target>17</maven.compiler.target>
 
+        <gbn.repo.url>https://nexus-private.hortonworks.com/nexus/content/groups/public/</gbn.repo.url>
+
         <!-- Configures if we should fail on warnings when generating Javadocs -->
         <javadoc.fail.on.warnings>true</javadoc.fail.on.warnings>
 
@@ -100,8 +102,8 @@
 
         <!-- Maven plugin versions -->
         <maven.compiler.version>3.10.1</maven.compiler.version>
-        <maven.surefire.version>3.1.2</maven.surefire.version>
-        <maven.failsafe.version>3.1.2</maven.failsafe.version>
+        <maven.surefire.version>3.2.5</maven.surefire.version>
+        <maven.failsafe.version>3.2.5</maven.failsafe.version>
         <maven.assembly.version>3.4.2</maven.assembly.version>
         <maven.shade.version>3.4.1</maven.shade.version>
         <maven.javadoc.version>3.4.1</maven.javadoc.version>
@@ -203,6 +205,17 @@
             </releases>
             <snapshots>
                 <enabled>false</enabled>
+            </snapshots>
+        </repository>
+        <repository>
+            <id>gbn.repo</id>
+            <url>${gbn.repo.url}</url>
+            <name>GBN Repo</name>
+            <releases>
+                <enabled>true</enabled>
+            </releases>
+            <snapshots>
+                <enabled>true</enabled>
             </snapshots>
         </repository>
         <repository>
