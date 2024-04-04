@@ -9,8 +9,8 @@ fi
 { # this ensures that the entire script is downloaded #
 NAMESPACE=""
 CLUSTER=""
-CPU_LIMIT="0.1"
-MEM_LIMIT="100M"
+CPU_LIMIT="0.25"
+MEM_LIMIT="500M"
 KUBECTL_INSTALLED=false
 OC_INSTALLED=false
 KUBE_CLIENT="kubectl"
@@ -64,8 +64,8 @@ Required:
   --cluster=<string>            Kafka cluster name.
 
 Optional:
-  --cpu=<string>                CPU resource limit of the pod (0.1 by default)
-  --mem=<string>                mem resource limit of the pod (100M by default)
+  --cpu=<string>                CPU resource limit of the pod (0.25 by default)
+  --mem=<string>                mem resource limit of the pod (500M by default)
 "
 OPTSPEC=":-:"
 while getopts "$OPTSPEC" optchar; do
