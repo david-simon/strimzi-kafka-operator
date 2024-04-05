@@ -9,6 +9,8 @@ import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
 import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.fabric8.kubernetes.api.model.Secret;
+import io.fabric8.kubernetes.api.model.SecretBuilder;
 import io.fabric8.kubernetes.api.model.ServiceAccount;
 import io.fabric8.kubernetes.api.model.ServiceAccountBuilder;
 import io.fabric8.kubernetes.api.model.apiextensions.v1.CustomResourceDefinition;
@@ -51,6 +53,7 @@ import org.junit.platform.commons.PreconditionViolationException;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -281,6 +284,7 @@ public class SetupClusterOperator {
         LOGGER.info("Install Cluster Operator via Helm");
         helmResource = new HelmResource(namespaceInstallTo, namespaceToWatch);
         createClusterOperatorNamespaceIfPossible();
+        addLicense();
         helmResource.create(extensionContext, operationTimeout, reconciliationInterval, extraEnvVars, replicas);
     }
 
@@ -288,6 +292,7 @@ public class SetupClusterOperator {
         LOGGER.info("Install Cluster Operator via Yaml bundle");
         // check if namespace is already created
         createClusterOperatorNamespaceIfPossible();
+        addLicense();
         prepareEnvForOperator(namespaceInstallTo, bindingsNamespaces);
         // if we manage directly in the individual test one of the Role, ClusterRole, RoleBindings and ClusterRoleBinding we must do it
         // everything by ourselves in scope of RBAC permissions otherwise we apply the default one
@@ -340,6 +345,8 @@ public class SetupClusterOperator {
                 createClusterOperatorNamespaceIfPossible();
                 createClusterRoleBindings();
 
+                addLicense();
+
                 // watch all namespaces
                 olmConfiguration.withNamespaceToWatch(TestConstants.WATCH_ALL_NAMESPACES);
 
@@ -349,6 +356,8 @@ public class SetupClusterOperator {
         } else {
             // single-namespace olm co-operator
             createClusterOperatorNamespaceIfPossible();
+
+            addLicense();
 
             // watch same namespace, where operator is installed
             olmConfiguration.withNamespaceToWatch(namespaceInstallTo);
@@ -991,5 +1000,27 @@ public class SetupClusterOperator {
      */
     public boolean isRolesAndBindingsManagedByAnUser() {
         return this.roles != null || this.clusterRoles != null || this.roleBindings != null || this.clusterRoleBindings != null;
+    }
+
+    private void addLicense() {
+        String secretName = "csm-op-license";
+        // don't create license secret if already exists
+        if (kubeClient().getSecret(namespaceInstallTo, secretName) != null) {
+            return;
+        }
+        String license;
+        try (var is = getClass().getResourceAsStream("/license/valid_license.pgp")) {
+            license = new String(is.readAllBytes(), StandardCharsets.UTF_8);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+        Secret licenseSecret = new SecretBuilder()
+                .editMetadata()
+                .withName(secretName)
+                .withNamespace(namespaceInstallTo)
+                .endMetadata()
+                .addToStringData("license", license)
+                .build();
+        ResourceManager.getInstance().createResourceWithWait(licenseSecret);
     }
 }
