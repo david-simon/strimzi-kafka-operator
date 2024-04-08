@@ -293,7 +293,7 @@
   checksum: 98D20F475BCCC11EB3CF05362112C788EEA7BFC88ABDDBA66CFCFB48880D3BB97918A90D44EB7C1720527BEBCA93DD231002B5159876F6EE8B7FCD91CC1B0644
   zookeeper: 3.8.2
   third-party-libs: 3.6.x
-  supported: true
+  supported: false
   default: false
 - version: 3.6.1
   format: 3.6
@@ -303,7 +303,7 @@
   checksum: 1F063CD67463DD3BB5A5E06E7A1C2278DB84BFC836A634FAC7C9A005DE66A42AC00B32F5E9BBDD22086605F73659EFD4CE5BD1185196B02A743BE0898DAAC55D
   zookeeper: 3.8.3
   third-party-libs: 3.6.x
-  supported: true
+  supported: false
   default: false
 - version: 3.7.0
   format: 3.7
@@ -313,5 +313,16 @@
   checksum: B8679283A2D8DAB86E7C636B2C688FE9D9E64AC437241F65EF7A1733F4D26A2BD415EEFA04F09F1911373BCD2A5DBC3838C76347F68656425C09202CD290CE91
   zookeeper: 3.8.3
   third-party-libs: 3.7.x
-  supported: true
+  supported: false
+  default: false
+- version: 3.7.0.1.0
+  artifactVersion: 3.7.0.1.0.0-SNAPSHOT
+  url: https://nexus-private.hortonworks.com/nexus/content/groups/public/org/apache/kafka/kafka_2.13/3.7.0.1.0.0-SNAPSHOT/kafka_2.13-3.7.0.1.0.0-SNAPSHOT.tgz
+  checksum: ""
+  zookeeper: 3.8.1.7.1.9.0-387
   default: true
+  supported: true
+  format: 3.7
+  protocol: 3.7
+  metadata: 3.7
+  third-party-libs: 3.7.x

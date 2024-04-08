@@ -10,12 +10,12 @@ watchAnyNamespace: false
 
 defaultImageRegistry: quay.io
 defaultImageRepository: strimzi
-defaultImageTag: 0.40.0
+defaultImageTag: 0.40.0.1.0.0-SNAPSHOT
 
 image:
   registry: ""
   repository: ""
-  name: operator
+  name: kafka-operator
   tag: ""
   # imagePullSecrets:
   #   - name: secretname
@@ -101,19 +101,19 @@ topicOperator:
   image:
     registry: ""
     repository: ""
-    name: operator
+    name: kafka-operator
     tag: ""
 userOperator:
   image:
     registry:
     repository:
-    name: operator
+    name: kafka-operator
     tag: ""
 kafkaInit:
   image:
     registry: ""
     repository: ""
-    name: operator
+    name: kafka-operator
     tag: ""
 tlsSidecarEntityOperator:
   image:
