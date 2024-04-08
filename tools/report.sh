@@ -221,6 +221,8 @@ get_topic_describe() {
   if [[ -n "$pod" ]]; then
     mkdir -p "$location"
 
+    # Shellcheck SC2016 is disabled because we want expressions to be expanded in the target pod, not in current shell
+    # shellcheck disable=SC2016
     $KUBE_CLIENT -n "$namespace" exec "$pod" -- bash -c '# Extract variables from strimzi.properties && \
         listener=$(grep "control.plane.listener.name" /tmp/strimzi.properties | sed -e "s/control.plane.listener.name=//g") && \
         port=$(grep "control.plane.listener.name" /tmp/strimzi.properties | sed -e "s/.*-//g") && \

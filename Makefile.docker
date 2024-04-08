@@ -19,7 +19,7 @@ BUILD_ID           ?= n/a
 BUILD_COMMIT       ?= n/a
 RELEASE_VERSION    ?= $(shell cat $(TOPDIR)/release.version)
 DOCKER_PUSH        ?= false
-DOCKER_NO_RETAG    ?= true
+DOCKER_NO_RETAG    ?= false
 
 ifdef DOCKER_ARCHITECTURE
   DOCKER_PLATFORM = --platform linux/$(DOCKER_ARCHITECTURE)
