@@ -63,8 +63,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.regex.Pattern;
 
-import static io.strimzi.systemtest.TestConstants.CLOUDERA_TAG_PREFIX;
 import static io.strimzi.systemtest.TestConstants.BRIDGE;
+import static io.strimzi.systemtest.TestConstants.CLOUDERA_TAG_PREFIX;
 import static io.strimzi.systemtest.TestConstants.CONNECT;
 import static io.strimzi.systemtest.TestConstants.CONNECT_COMPONENTS;
 import static io.strimzi.systemtest.TestConstants.MIRROR_MAKER2;

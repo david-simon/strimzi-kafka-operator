@@ -84,6 +84,7 @@ import io.strimzi.test.annotations.ParallelSuite;
 import io.strimzi.test.annotations.ParallelTest;
 import org.apache.kafka.common.Uuid;
 import org.hamcrest.CoreMatchers;
+import org.junit.jupiter.api.Disabled;
 
 import java.io.IOException;
 import java.security.cert.CertificateParsingException;
@@ -3985,6 +3986,7 @@ public class KafkaClusterTest {
     }
 
     @ParallelTest
+    @Disabled("Upgrades are not supported (CSMDS-298)") // TODO: Remove this when we have upgrade support (CSMDS-298)
     public void testInvalidInterBrokerProtocolAndLogMessageFormatOnKRaftMigration() {
         // invalid values ... metadata missing (it gets the Kafka version), inter broker protocol and log message format lower than Kafka version
         Map<String, Object> config = new HashMap<>();
@@ -4018,6 +4020,7 @@ public class KafkaClusterTest {
     }
 
     @ParallelTest
+    @Disabled("Upgrades are not supported (CSMDS-298)") // TODO: Remove this when we have upgrade support (CSMDS-298)
     public void testInvalidMetadataVersionOnKRaftMigration() {
         // invalid values ... metadata lower than Kafka version, inter broker protocol and log message format missing (they get the Kafka version)
         Kafka kafka = new KafkaBuilder(KAFKA)
@@ -4048,6 +4051,7 @@ public class KafkaClusterTest {
     }
 
     @ParallelTest
+    @Disabled("Upgrades are not supported (CSMDS-298)") // TODO: Remove this when we have upgrade support (CSMDS-298)
     public void testValidVersionsOnKRaftMigration() {
         Map<String, Object> config = new HashMap<>();
         config.put("inter.broker.protocol.version", "3.6");

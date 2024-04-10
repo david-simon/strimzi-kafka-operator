@@ -60,6 +60,7 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInfo;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -2061,6 +2062,7 @@ public class ConnectorMockTest {
     }
 
     @Test
+    @Disabled("This test has a bug and CSM Operator does not support Connect yet.") // TODO remove with Connect support
     void testConnectorResourceMetricsScaledToZero(VertxTestContext context) {
         String connectName = "cluster";
         String connectorName = "connector";
