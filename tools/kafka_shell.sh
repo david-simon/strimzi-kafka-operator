@@ -114,7 +114,7 @@ kafka_image="$($KUBE_CLIENT -n "$NAMESPACE" get po -l "$kafka_broker_labels" --i
 broker_pod="$($KUBE_CLIENT -n "$NAMESPACE" get po -l "$kafka_broker_labels" --ignore-not-found --no-headers -o=custom-columns=NAME:.metadata.name | head -1)"
 set -o pipefail
 
-image_pull_secrets="$($KUBE_CLIENT -n "$NAMESPACE" get po "$broker_pod" -o=jsonpath="  imagePullSecrets:{'\n'}{range .spec.imagePullSecrets[*]}[    -name: {.name}{'\n'}]{end}")"
+image_pull_secrets="$($KUBE_CLIENT -n "$NAMESPACE" get po "$broker_pod" -o=jsonpath="  imagePullSecrets:{'\n'}{range .spec.imagePullSecrets[*]}    -name: {.name}{'\n'}{end}")"
 if [[ $image_pull_secrets != *"name"* ]]; then
   image_pull_secrets="  imagePullSecrets: []"
 fi
