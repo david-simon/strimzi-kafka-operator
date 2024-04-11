@@ -279,16 +279,18 @@ get_cluster_operator_info() {
     mkdir -p "$location"/deployments
     co_deploy=$(echo "$co_deploy" | cut -d "/" -f 2) && readonly co_deploy
     $KUBE_CLIENT get deploy "$co_deploy" -o yaml -n "$namespace" > "$location"/deployments/"$co_deploy".yaml
-    CO_RS=$($KUBE_CLIENT get rs -l strimzi.io/kind=cluster-operator -o name -n "$namespace" --ignore-not-found)
-    if [[ -n $CO_RS ]]; then
-      echo "            $CO_RS"
+    local co_rs
+    co_rs=$($KUBE_CLIENT get rs -l strimzi.io/kind=cluster-operator -o name -n "$namespace" --ignore-not-found)
+    if [[ -n $co_rs ]]; then
+      echo "            $co_rs"
       mkdir -p "$location"/replicasets
-      CO_RS=$(echo "$CO_RS" | cut -d "/" -f 2) && readonly CO_RS
-      $KUBE_CLIENT get rs "$CO_RS" -o yaml -n "$namespace" > "$location"/replicasets/"$CO_RS".yaml
+      co_rs=$(echo "$co_rs" | cut -d "/" -f 2)
+      $KUBE_CLIENT get rs "$co_rs" -o yaml -n "$namespace" > "$location"/replicasets/"$co_rs".yaml
     fi
-    mapfile -t CO_PODS < <($KUBE_CLIENT get po -l strimzi.io/kind=cluster-operator -o name -n "$namespace" --ignore-not-found)
-    if [[ ${#CO_PODS[@]} -ne 0 ]]; then
-      for pod in "${CO_PODS[@]}"; do
+    local co_pods
+    mapfile -t co_pods < <($KUBE_CLIENT get po -l strimzi.io/kind=cluster-operator -o name -n "$namespace" --ignore-not-found)
+    if [[ ${#co_pods[@]} -ne 0 ]]; then
+      for pod in "${co_pods[@]}"; do
         echo "            $pod"
         mkdir -p "$location"/pods
         CO_POD=$(echo "$pod" | cut -d "/" -f 2)
@@ -296,13 +298,44 @@ get_cluster_operator_info() {
         get_pod_logs "$namespace" "$CO_POD" "$location"
       done
     fi
-    CO_CM=$($KUBE_CLIENT get cm strimzi-cluster-operator -o name -n "$namespace" --ignore-not-found)
-    if [[ -n $CO_CM ]]; then
-      echo "            $CO_CM"
+    local co_cm
+    co_cm=$($KUBE_CLIENT get cm strimzi-cluster-operator -o name -n "$namespace" --ignore-not-found)
+    if [[ -n $co_cm ]]; then
+      echo "            $co_cm"
       mkdir -p "$location"/configmaps
-      CO_CM=$(echo "$CO_CM" | cut -d "/" -f 2) && readonly CO_CM
-      $KUBE_CLIENT get cm "$CO_CM" -o yaml -n "$namespace" > "$location"/configmaps/"$CO_CM".yaml
+      co_cm=$(echo "$co_cm" | cut -d "/" -f 2)
+      $KUBE_CLIENT get cm "$co_cm" -o yaml -n "$namespace" > "$location"/configmaps/"$co_cm".yaml
     fi
+
+    # Dump license JSON if present
+    local license_secret_name
+    license_secret_name=$($KUBE_CLIENT get deployments -n "$namespace" strimzi-cluster-operator -ojsonpath="{.spec.template.spec.containers[0].env[?(@.name==\"LICENSE_SECRET_NAME\")].value}")
+    if [[ -n "$license_secret_name" ]]; then
+      local license_content
+      license_content=$($KUBE_CLIENT get secrets -n "$namespace" "$license_secret_name" --ignore-not-found -ojsonpath="{.stringdata.license}" )
+      if [[ -n "$license_content" ]]; then
+        echo "            license"
+        local license_json
+        license_json=""
+        while IFS= read -r line || [[ -n $line ]]; do
+          if [[ "$line" == "-----BEGIN PGP SIGNED MESSAGE-----" || "$line" == "Hash: "* ]]; then
+            # Skip PGP message header lines
+            continue
+          fi
+          if [[ "$line" == "-----BEGIN PGP SIGNATURE-----" ]]; then
+            # Stop when encountering the start of the signature
+            break
+          fi
+          if [[ -n "$license_json" ]]; then
+            license_json="${license_json} "
+          fi
+          license_json="${license_json}${line}"
+        done < <(printf '%s' "$license_content")
+        # shellcheck disable=SC2001
+        echo "$license_json" | sed -e 's/"name"[[:space:]]*:[[:space:]]*"[^"]*"/"name": "REDACTED"/' > "$location"/license.json
+      fi
+    fi
+
     return 0
   else
     return 1
@@ -332,7 +365,7 @@ get_events() {
   local namespace="$1"
   local location="$OUT_DIR"/reports/namespaces/"$namespace"/events
 
-  echo "            events"
+  echo "        events"
   local events
   events=$($KUBE_CLIENT get event -n "$namespace" -o wide --ignore-not-found) && readonly events
   if [[ -n $events ]]; then
