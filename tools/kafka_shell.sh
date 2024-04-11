@@ -122,7 +122,7 @@ pod_name="kafka-shell-$RANDOM"
 
 listener_port=$($KUBE_CLIENT -n "$NAMESPACE" get configmaps "$broker_pod" -o jsonpath='{.data.server\.config}' | grep "control.plane.listener.name" | cut -d'-' -f2)
 bootstrap_servers="$CLUSTER-kafka-brokers.$NAMESPACE.svc:$listener_port"
-
+config_map_name=$($KUBE_CLIENT -n "$NAMESPACE" get pod "$broker_pod" -o jsonpath="{.spec.volumes[?(@.name==\"kafka-metrics-and-logging\")].configMap.name}")
 
 # cleanup for the pod on exit
 trap '$KUBE_CLIENT -n "$NAMESPACE" delete pod "$pod_name"' EXIT
@@ -150,7 +150,7 @@ ${image_pull_secrets}
           CERTS_STORE_PASSWORD=\$(< /dev/urandom tr -dc _A-Z-a-z-0-9 | head -c32)
           export CERTS_STORE_PASSWORD
           mkdir -p /tmp/kafka
-          HOSTNAME=$CLUSTER-kafka-0 ./kafka_tls_prepare_certificates.sh
+          HOSTNAME=$broker_pod ./kafka_tls_prepare_certificates.sh
           envsubst '\${CERTS_STORE_PASSWORD}' < "/opt/kafka/custom-config/server.config" | grep -i "listener.name.\$listener." | cut -d'.' -f4- > /tmp/client.properties
           echo "security.protocol=ssl" >> /tmp/client.properties
           while true; do sleep 10; done;
@@ -191,7 +191,7 @@ ${image_pull_secrets}
         secretName: $CLUSTER-clients-ca-cert
     - configMap:
         defaultMode: 420
-        name: $CLUSTER-kafka-0
+        name: $config_map_name
       name: kafka-metrics-and-logging
 EOF
 $KUBE_CLIENT -n "$NAMESPACE" wait --for=condition=Ready pod "$pod_name" >> /dev/null || true
