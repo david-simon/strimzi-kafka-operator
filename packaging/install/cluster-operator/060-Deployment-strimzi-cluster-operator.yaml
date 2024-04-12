@@ -74,7 +74,7 @@ spec:
             - name: STRIMZI_DEFAULT_KAFKA_BRIDGE_IMAGE
               value: quay.io/strimzi/kafka-bridge:0.28.0
             - name: STRIMZI_DEFAULT_KANIKO_EXECUTOR_IMAGE
-              value: quay.io/strimzi/kaniko-executor:0.40.0.1.0.0-SNAPSHOT
+              value: docker-private.infra.cloudera.com/cloudera/kaniko-executor:0.40.0.1.0.0-SNAPSHOT
             - name: STRIMZI_DEFAULT_MAVEN_BUILDER
               value: quay.io/strimzi/maven-builder:0.40.0.1.0.0-SNAPSHOT
             - name: STRIMZI_OPERATOR_NAMESPACE
