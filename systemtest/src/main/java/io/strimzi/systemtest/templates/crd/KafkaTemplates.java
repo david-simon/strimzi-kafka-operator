@@ -325,6 +325,7 @@ public class KafkaTemplates {
     }
 
     private static KafkaBuilder defaultKafkaNodePools(Kafka kafka, String clusterName, int kafkaReplicas, int zookeeperReplicas) {
+        zookeeperReplicas = Math.max(3, zookeeperReplicas);
         KafkaBuilder kb = new KafkaBuilder(kafka)
             .withNewMetadata()
                 .withName(clusterName)
