@@ -25,7 +25,7 @@ public class KafkaVersionTestUtils {
     public static final String LATEST_FORMAT_VERSION = "3.7";
     public static final String LATEST_PROTOCOL_VERSION = "3.7";
     public static final String LATEST_METADATA_VERSION = "3.7-IV4";
-    public static final String LATEST_ZOOKEEPER_VERSION = "3.8.1.7.1.9.0-387";
+    public static final String LATEST_ZOOKEEPER_VERSION = "3.8.1.7.2.18.0-641";
     public static final String LATEST_CHECKSUM = "ABCD1234";
     public static final String LATEST_THIRD_PARTY_VERSION = "3.7.x";
     public static final String LATEST_KAFKA_IMAGE = KAFKA_IMAGE_STR + LATEST_KAFKA_VERSION;

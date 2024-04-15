@@ -319,7 +319,7 @@
   artifactVersion: 3.7.0.1.0.0-SNAPSHOT
   url: https://nexus-private.hortonworks.com/nexus/content/groups/public/org/apache/kafka/kafka_2.13/3.7.0.1.0.0-SNAPSHOT/kafka_2.13-3.7.0.1.0.0-SNAPSHOT.tgz
   checksum: ""
-  zookeeper: 3.8.1.7.1.9.0-387
+  zookeeper: 3.8.1.7.2.18.0-641
   default: true
   supported: true
   format: 3.7
