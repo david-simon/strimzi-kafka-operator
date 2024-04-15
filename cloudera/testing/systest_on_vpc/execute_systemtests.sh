@@ -197,7 +197,8 @@ function configure_systemtest {
       additional_systemtest_profiles=$(get_profiles "${test_profiles_chunks}" "$(( parallelization_bucket_number - 1 ))" "${test_profiles[@]}")
     else
       additional_systemtest_profiles=$(get_profiles "${feature_gates_test_profiles_chunks}" "$(( parallelization_bucket_number - test_profiles_chunks - 1 ))" "${feature_gates_test_profiles[@]}")
-      STRIMZI_FEATURE_GATES='+KafkaNodePools,-StableConnectIdentities,+UnidirectionalTopicOperator'
+      # should be whatever is set in strimzi_feature_gates config in .azure/templates/jobs/system-tests/feature_gates_regression_jobs.yaml
+      STRIMZI_FEATURE_GATES='-KafkaNodePools,-UnidirectionalTopicOperator,-UseKRaft'
     fi
     # in case $additional_systemtest_profiles is empty here it means the parallelzation factor is higher than we can make use of, exiting
     if [[ -z "${additional_systemtest_profiles}" ]]; then
