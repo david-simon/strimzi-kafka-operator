@@ -68,6 +68,9 @@ public class HelmResource implements SpecificResourceType {
         values.put("defaultImageTag", Environment.STRIMZI_TAG);
         values.put("kafkaBridge.image.tag", BridgeUtils.getBridgeVersion());
 
+        // License secret config
+        values.put("licenseSecretName", Environment.LICENSE_SECRET_NAME);
+
         // Additional config
         values.put("image.imagePullPolicy", Environment.OPERATOR_IMAGE_PULL_POLICY);
         values.put("resources.requests.memory", TestConstants.CO_REQUESTS_MEMORY);

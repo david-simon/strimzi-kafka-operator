@@ -7,6 +7,9 @@ The import control rules are currently configured only for 3 packages:
   * io.strimzi.operator.common.model
   * io.strimzi.operator.cluster.model
   * io.strimzi.operator.user.model
+  * com.cloudera.operator.common.model
+  * com.cloudera.operator.cluster.model
+  * com.cloudera.operator.user.model
 
 For all other packages, there are currently no restrictions, and they can import anything. To achieve this, we have to
 first configure <import-control pkg="io.strimzi" strategyOnMismatch="allowed"> which allows all imports for all classes
@@ -22,7 +25,7 @@ case it is really needed, you can add it bellow to the allowed imports.
 We also control imports only in production classes and not in tests. This is controlled in the main checkstyle file.
 -->
 
-<import-control pkg="io.strimzi" strategyOnMismatch="allowed">
+<import-control pkg="io.strimzi|com.cloudera" regex="true" strategyOnMismatch="allowed">
     <subpackage name="operator.common.model" strategyOnMismatch="disallowed">
         <!-- This enforces the layering between the Strimzi Model and Operator classes in the Operator Common. The Model classes are not allowed
         to import from Operator classes. They should only use the API classes -->

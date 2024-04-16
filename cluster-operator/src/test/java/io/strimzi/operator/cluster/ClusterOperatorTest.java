@@ -4,6 +4,7 @@
  */
 package io.strimzi.operator.cluster;
 
+import com.cloudera.operator.cluster.LicenseExpirationWatcher;
 import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.Watch;
@@ -129,6 +130,9 @@ public class ClusterOperatorTest {
         MixedOperation mockPods = mock(MixedOperation.class);
         when(client.pods()).thenReturn(mockPods);
 
+        LicenseExpirationWatcher mockLicenseExpirationWatcher = mock(LicenseExpirationWatcher.class);
+        when(mockLicenseExpirationWatcher.isLicenseActive()).thenReturn(true);
+
         List<String> namespaceList = asList(namespaces.split(" *,+ *"));
         for (String namespace: namespaceList) {
             // Mock CRs
@@ -175,7 +179,7 @@ public class ClusterOperatorTest {
         CountDownLatch latch = new CountDownLatch(namespaceList.size() + 1);
 
         Main.deployClusterOperatorVerticles(VERTX, client, ResourceUtils.metricsProvider(), new PlatformFeaturesAvailability(false, KubernetesVersion.MINIMAL_SUPPORTED_VERSION),
-                    ClusterOperatorConfig.buildFromMap(env, KafkaVersionTestUtils.getKafkaVersionLookup()), new ShutdownHook())
+                    ClusterOperatorConfig.buildFromMap(env, KafkaVersionTestUtils.getKafkaVersionLookup()), new ShutdownHook(), mockLicenseExpirationWatcher)
 
             .onComplete(context.succeeding(v -> context.verify(() -> {
                 assertThat("A verticle per namespace", VERTX.deploymentIDs(), hasSize(namespaceList.size()));
@@ -248,6 +252,9 @@ public class ClusterOperatorTest {
         });
         when(mockCms.inAnyNamespace()).thenReturn(mockFilteredCms);
 
+        LicenseExpirationWatcher mockLicenseExpirationWatcher = mock(LicenseExpirationWatcher.class);
+        when(mockLicenseExpirationWatcher.isLicenseActive()).thenReturn(true);
+
         // Mock Pods
         MixedOperation mockPods = mock(MixedOperation.class);
         AnyNamespaceOperation mockFilteredPods = mock(AnyNamespaceOperation.class);
@@ -270,7 +277,7 @@ public class ClusterOperatorTest {
         CountDownLatch latch = new CountDownLatch(2);
 
         Main.deployClusterOperatorVerticles(VERTX, client, ResourceUtils.metricsProvider(), new PlatformFeaturesAvailability(false, KubernetesVersion.MINIMAL_SUPPORTED_VERSION),
-                ClusterOperatorConfig.buildFromMap(env, KafkaVersionTestUtils.getKafkaVersionLookup()), new ShutdownHook())
+                ClusterOperatorConfig.buildFromMap(env, KafkaVersionTestUtils.getKafkaVersionLookup()), new ShutdownHook(), mockLicenseExpirationWatcher)
             .onComplete(context.succeeding(v -> context.verify(() -> {
                 assertThat("A verticle per namespace", VERTX.deploymentIDs(), hasSize(1));
                 for (String deploymentId: VERTX.deploymentIDs()) {

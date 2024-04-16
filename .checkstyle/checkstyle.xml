@@ -17,7 +17,7 @@
              * License: Apache License 2.0 (see the file LICENSE or http://apache.org/licenses/LICENSE-2.0.html).
              */
          -->
-        <property name="header" value="^\/\*$\n^\s\*\sCopyright\sStrimzi\sauthors\.$\n^\s\*\sLicense:\sApache\sLicense\s2\.0\s\(see\sthe\sfile\sLICENSE\sor\shttp:\/\/apache\.org\/licenses\/LICENSE-2\.0\.html\)\.$\n^\s\*\/$"/>
+        <property name="header" value="^\/\*$\n^.*Copyright\s.*"/>
         <property name="fileExtensions" value="java"/>
     </module>
 

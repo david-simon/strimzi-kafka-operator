@@ -4,6 +4,7 @@
  */
 package io.strimzi.operator.cluster;
 
+import com.cloudera.operator.cluster.LicenseExpirationWatcher;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.fabric8.kubernetes.api.model.rbac.ClusterRole;
 import io.fabric8.kubernetes.client.KubernetesClient;
@@ -98,7 +99,7 @@ public class Main {
                 .compose(i -> startHealthServer(vertx, metricsProvider))
                 .compose(i -> leaderElection(client, config, shutdownHook))
                 .compose(i -> createPlatformFeaturesAvailability(vertx, client))
-                .compose(pfa -> deployClusterOperatorVerticles(vertx, client, metricsProvider, pfa, config, shutdownHook))
+                .compose(pfa -> deployClusterOperatorVerticles(vertx, client, metricsProvider, pfa, config, shutdownHook, null))
                 .onComplete(res -> {
                     if (res.failed())   {
                         LOGGER.error("Unable to start operator for 1 or more namespace", res.cause());
@@ -136,16 +137,17 @@ public class Main {
      * Deploys the ClusterOperator verticles responsible for the actual Cluster Operator functionality. One verticle is
      * started for each namespace the operator watched. In case of watching the whole cluster, only one verticle is started.
      *
-     * @param vertx             Vertx instance
-     * @param client            Kubernetes client instance
-     * @param metricsProvider   Metrics provider instance
-     * @param pfa               PlatformFeaturesAvailability instance describing the Kubernetes cluster
-     * @param config            Cluster Operator configuration
-     * @param shutdownHook      Shutdown hook to register leader election shutdown
+     * @param vertx                     Vertx instance
+     * @param client                    Kubernetes client instance
+     * @param metricsProvider           Metrics provider instance
+     * @param pfa                       PlatformFeaturesAvailability instance describing the Kubernetes cluster
+     * @param config                    Cluster Operator configuration
+     * @param shutdownHook              Shutdown hook to register leader election shutdown
+     * @param licenseExpirationWatcher  LicenseExpirationWatcher instance
      *
      * @return  Future which completes when all Cluster Operator verticles are started and running
      */
-    static CompositeFuture deployClusterOperatorVerticles(Vertx vertx, KubernetesClient client, MetricsProvider metricsProvider, PlatformFeaturesAvailability pfa, ClusterOperatorConfig config, ShutdownHook shutdownHook) {
+    static CompositeFuture deployClusterOperatorVerticles(Vertx vertx, KubernetesClient client, MetricsProvider metricsProvider, PlatformFeaturesAvailability pfa, ClusterOperatorConfig config, ShutdownHook shutdownHook, LicenseExpirationWatcher licenseExpirationWatcher) {
         ResourceOperatorSupplier resourceOperatorSupplier = new ResourceOperatorSupplier(
                 vertx,
                 client,
@@ -182,6 +184,15 @@ public class Main {
             kafkaRebalanceAssemblyOperator = new KafkaRebalanceAssemblyOperator(vertx, resourceOperatorSupplier, config);
         }
 
+        if (licenseExpirationWatcher == null) {
+            try {
+                licenseExpirationWatcher = startLicenseExpirationWatcher(client, config, shutdownHook);
+            } catch (Exception e) {
+                LOGGER.error("Unable to start operator license checking", e);
+                System.exit(1);
+            }
+        }
+
         List<Future<String>> futures = new ArrayList<>(config.getNamespaces().size());
         for (String namespace : config.getNamespaces()) {
             Promise<String> prom = Promise.promise();
@@ -194,7 +205,8 @@ public class Main {
                     kafkaMirrorMaker2AssemblyOperator,
                     kafkaBridgeAssemblyOperator,
                     kafkaRebalanceAssemblyOperator,
-                    resourceOperatorSupplier);
+                    resourceOperatorSupplier,
+                    licenseExpirationWatcher);
             vertx.deployVerticle(operator,
                 res -> {
                     if (res.succeeded()) {
@@ -261,6 +273,29 @@ public class Main {
         }
 
         return leader.future();
+    }
+
+    /**
+     * Utility method which starts the License expiration watcher
+     *
+     * @param client        Kubernetes client
+     * @param config        Cluster Operator configuration
+     * @param shutdownHook  Shutdown hook to register license expiration watcher shutdown
+     */
+    private static LicenseExpirationWatcher startLicenseExpirationWatcher(KubernetesClient client,
+                                                                          ClusterOperatorConfig config,
+                                                                          ShutdownHook shutdownHook) {
+        var licenseConfig = config.getLicenseConfig();
+        var namespace = config.getOperatorNamespace();
+        var licenseSecretName = licenseConfig.getLicenseSecretName();
+
+        var licenseExpirationWatcher = new LicenseExpirationWatcher(client, namespace, licenseSecretName);
+        licenseExpirationWatcher.doLicenseExpirationWatching(false);
+
+        shutdownHook.register(licenseExpirationWatcher::stop);
+        licenseExpirationWatcher.start();
+
+        return licenseExpirationWatcher;
     }
 
     /**

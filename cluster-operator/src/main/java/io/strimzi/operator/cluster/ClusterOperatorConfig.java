@@ -4,6 +4,7 @@
  */
 package io.strimzi.operator.cluster;
 
+import com.cloudera.operator.cluster.LicenseConfig;
 import io.fabric8.kubernetes.api.model.LocalObjectReference;
 import io.strimzi.operator.cluster.leaderelection.LeaderElectionManagerConfig;
 import io.strimzi.operator.cluster.model.ImagePullPolicy;
@@ -298,6 +299,7 @@ public class ClusterOperatorConfig {
         Map<String, String> envMap = new HashMap<>(map);
 
         CONFIG_VALUES.putAll(LeaderElectionManagerConfig.configValues());
+        CONFIG_VALUES.putAll(LicenseConfig.configValues());
         envMap.keySet().retainAll(ClusterOperatorConfig.keyNames());
 
         Map<String, Object> generatedMap = ConfigParameter.define(envMap, CONFIG_VALUES);
@@ -607,6 +609,13 @@ public class ClusterOperatorConfig {
         }
     }
 
+    /**
+     * @return Returns the License configuration
+     */
+    public LicenseConfig getLicenseConfig() {
+        return LicenseConfig.buildFromExistingMap(map);
+    }
+
     @Override
     public String toString() {
         return "ClusterOperatorConfig{" +
@@ -630,6 +639,7 @@ public class ClusterOperatorConfig {
                 "\n\toperatorName='" + getOperatorName() + '\'' +
                 "\n\tpodSecurityProviderClass='" + getPodSecurityProviderClass() + '\'' +
                 "\n\tleaderElectionConfig='" + getLeaderElectionConfig() + '\'' +
+                "\n\tlicenseConfig='" + getLicenseConfig() + '\'' +
                 "}";
     }
 }

@@ -148,6 +148,11 @@ public class Environment {
     public static final String STRIMZI_NODE_POOLS_ROLE_MODE_ENV = "STRIMZI_NODE_POOLS_ROLE_MODE";
 
     /**
+     * License secret name variable
+     */
+    public static final String LICENSE_SECRET_NAME_ENV = "LICENSE_SECRET_NAME";
+
+    /**
      * CO PodSet-only reconciliation env variable <br>
      * Only SPS will be reconciled, when this env variable will be true
      */
@@ -192,6 +197,7 @@ public class Environment {
     private static final ClusterOperatorInstallType CLUSTER_OPERATOR_INSTALL_TYPE_DEFAULT = ClusterOperatorInstallType.BUNDLE;
     private static final boolean LB_FINALIZERS_DEFAULT = false;
     private static final String STRIMZI_FEATURE_GATES_DEFAULT = "";
+    private static final String LICENSE_SECRET_NAME_DEFAULT = "csm-op-license";
     private static final String RESOURCE_ALLOCATION_STRATEGY_DEFAULT = "SHARE_MEMORY_FOR_ALL_COMPONENTS";
 
     private static final String ST_KAFKA_VERSION_DEFAULT = TestKafkaVersion.getDefaultSupportedKafkaVersion();
@@ -221,6 +227,7 @@ public class Environment {
     public static final String STRIMZI_FEATURE_GATES = getOrDefault(STRIMZI_FEATURE_GATES_ENV, STRIMZI_FEATURE_GATES_DEFAULT);
     public static final boolean STRIMZI_USE_KRAFT_IN_TESTS = getOrDefault(STRIMZI_USE_KRAFT_IN_TESTS_ENV, Boolean::parseBoolean, false);
     public static final NodePoolsRoleMode STRIMZI_NODE_POOLS_ROLE_MODE = getOrDefault(STRIMZI_NODE_POOLS_ROLE_MODE_ENV, value -> NodePoolsRoleMode.valueOf(value.toUpperCase(Locale.ENGLISH)), NodePoolsRoleMode.SEPARATE);
+    public static final String LICENSE_SECRET_NAME = getOrDefault(LICENSE_SECRET_NAME_ENV, LICENSE_SECRET_NAME_DEFAULT);
 
     // variables for kafka client app images
     private static final String TEST_CLIENTS_VERSION = getOrDefault(TEST_CLIENTS_VERSION_ENV, TEST_CLIENTS_VERSION_DEFAULT);

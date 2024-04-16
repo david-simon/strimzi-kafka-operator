@@ -53,6 +53,11 @@ spec:
         - name: {{ .Values.logVolume }}
           configMap:
             name: {{ .Values.logConfigMap }}
+        - name: license
+          secret:
+            defaultMode: 420
+            secretName: {{ .Values.licenseSecretName }}
+            optional: true
       containers:
         - name: strimzi-cluster-operator
           image: {{ template "strimzi.image" (set . "key" "") }}
@@ -156,6 +161,8 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: metadata.name
+            - name: LICENSE_SECRET_NAME
+              value: {{ .Values.licenseSecretName }}
           livenessProbe:
             httpGet:
               path: /healthy
