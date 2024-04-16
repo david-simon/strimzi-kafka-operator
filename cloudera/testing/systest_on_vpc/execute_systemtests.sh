@@ -125,7 +125,7 @@ function setup_env {
 
 function checkout_strimzi {
   [[ -d strimzi-kafka-operator ]] && rm -fr strimzi-kafka-operator
-  repo="$(jq -r '.sources[] | select(.repo | endswith("strimzi-kafka-operator.git")) | .repo | split("@") [1]' "${build_json_file}")"
+  repo="$(jq -r '.sources[] | select(.repo | endswith("strimzi-kafka-operator.git")) | .repo | split("@") [1] | sub(":"; "/")' "${build_json_file}")"
   git clone "https://${repo}"
   cd strimzi-kafka-operator
 
