@@ -125,7 +125,8 @@ function setup_env {
 
 function checkout_strimzi {
   [[ -d strimzi-kafka-operator ]] && rm -fr strimzi-kafka-operator
-  git clone https://github.infra.cloudera.com/CDF/strimzi-kafka-operator.git
+  repo="$(jq -r '.sources[] | select(.repo | endswith("strimzi-kafka-operator.git")) | .repo | split("@") [1]' "${build_json_file}")"
+  git clone "https://${repo}"
   cd strimzi-kafka-operator
 
   pr_ref="$(jq -r '.review_ref // empty | select(. | contains("strimzi-kafka-operator")) | split(":") [2]' "${build_json_file}")"
