@@ -162,12 +162,20 @@ function configure_systemtest {
   STRIMZI_FEATURE_GATES=""
   STRIMZI_RBAC_SCOPE="CLUSTER"
 
+  regression_jobs_yaml="${script_dir}/strimzi-kafka-operator/.azure/templates/jobs/system-tests/regression_jobs.yaml"
+  feature_gates_regression_jobs_yaml="${script_dir}/strimzi-kafka-operator/.azure/templates/jobs/system-tests/feature_gates_regression_jobs.yaml"
+
+  if [[ ! -f "${regression_jobs_yaml}" ||  ! -f "${feature_gates_regression_jobs_yaml}" ]]; then
+    echo "System test job templates are missing, exiting"
+    exit 254
+  fi
+
   if [[ ${parallelization_factor} -gt 1 ]]; then
     # the following groups of profiles containing the profiles which could be executed together (no matter what kind of pairing).
     # ideally, when para fact is 11 (# of elems in both array) each bucket receives one profile from these groups
-    test_profiles=("acceptance" "azp_kafka_oauth" "azp_security" "azp_dynconfig_listeners_tracing_watcher" "azp_operators" "azp_remaining")
+    eval test_profiles="('acceptance' $(yq '.jobs[].parameters.profile' "${regression_jobs_yaml}"))"
     # STRIMZI_FEATURE_GATES env var is set for these profiles
-    feature_gates_test_profiles=("azp_kafka_oauth" "azp_security" "azp_dynconfig_listeners_tracing_watcher" "azp_operators" "azp_remaining")
+    eval feature_gates_test_profiles="($(yq '.jobs[].parameters.profile' "${feature_gates_regression_jobs_yaml}"))"
 
     # splitting the buckets into two pieces/groups: regular and the feature gates test
     # first group of profiles is bigger so it'll be split into more
@@ -198,12 +206,11 @@ function configure_systemtest {
       additional_systemtest_profiles=$(get_profiles "${test_profiles_chunks}" "$(( parallelization_bucket_number - 1 ))" "${test_profiles[@]}")
     else
       additional_systemtest_profiles=$(get_profiles "${feature_gates_test_profiles_chunks}" "$(( parallelization_bucket_number - test_profiles_chunks - 1 ))" "${feature_gates_test_profiles[@]}")
-      # should be whatever is set in strimzi_feature_gates config in .azure/templates/jobs/system-tests/feature_gates_regression_jobs.yaml
-      STRIMZI_FEATURE_GATES='-KafkaNodePools,-UnidirectionalTopicOperator,-UseKRaft'
+      STRIMZI_FEATURE_GATES="$(yq '.jobs[0].parameters.strimzi_feature_gates' "${feature_gates_regression_jobs_yaml}")"
     fi
     # in case $additional_systemtest_profiles is empty here it means the parallelzation factor is higher than we can make use of, exiting
     if [[ -z "${additional_systemtest_profiles}" ]]; then
-      echo "Parallelzation factor is higher than we can make use of, exiting"
+      echo "Parallelization factor is higher than we can make use of, exiting"
       exit 255
     fi
   else
