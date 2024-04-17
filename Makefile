@@ -26,7 +26,7 @@ ifeq ($(CLOUDERA_BUILD),false)
 	RELEASE_EXTRA_TARGETS=release_docu docu_clean
 else
 	ALL_EXTRA_TARGETS=
-	RELEASE_EXTRA_TARGETS=
+	RELEASE_EXTRA_TARGETS=cloudera_filter_examples
 endif
 
 all: prerequisites_check $(SUBDIRS) $(DOCKERDIRS) $(ALL_EXTRA_TARGETS)
@@ -207,4 +207,7 @@ checksum_install:
 checksum_helm:
 	@$(FIND) ./helm-charts/ -type f -print0 | LC_ALL=C $(SORT) -z | $(XARGS) -0 $(SHA1SUM) | $(SHA1SUM)
 
-.PHONY: all $(SUBDIRS) $(DOCKERDIRS) $(DOCKER_TARGETS) docu_versions spotbugs docu_check prerequisites_check
+cloudera_filter_examples:
+	./cloudera/filter_examples.sh ${RELEASE_VERSION}
+
+.PHONY: all $(SUBDIRS) $(DOCKERDIRS) $(DOCKER_TARGETS) docu_versions spotbugs docu_check prerequisites_check cloudera_filter_example
