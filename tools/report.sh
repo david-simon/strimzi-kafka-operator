@@ -223,7 +223,7 @@ get_topic_describe() {
 
     # Shellcheck SC2016 is disabled because we want expressions to be expanded in the target pod, not in current shell
     # shellcheck disable=SC2016
-    $KUBE_CLIENT -n "$namespace" exec "$pod" -- bash -c '# Extract variables from strimzi.properties && \
+    $KUBE_CLIENT -n "$namespace" exec "$pod" -c kafka -- bash -c '# Extract variables from strimzi.properties && \
         listener=$(grep "control.plane.listener.name" /tmp/strimzi.properties | sed -e "s/control.plane.listener.name=//g") && \
         port=$(grep "control.plane.listener.name" /tmp/strimzi.properties | sed -e "s/.*-//g") && \
         bootstrapserver=$(grep "advertised.listeners" /tmp/strimzi.properties | sed -e "s/.*$listener:\/\/\(.*\):$port.*/\1/") && \
@@ -311,28 +311,32 @@ get_cluster_operator_info() {
     local license_secret_name
     license_secret_name=$($KUBE_CLIENT get deployments -n "$namespace" strimzi-cluster-operator -ojsonpath="{.spec.template.spec.containers[0].env[?(@.name==\"LICENSE_SECRET_NAME\")].value}")
     if [[ -n "$license_secret_name" ]]; then
-      local license_content
-      license_content=$($KUBE_CLIENT get secrets -n "$namespace" "$license_secret_name" --ignore-not-found -ojsonpath="{.stringdata.license}" )
-      if [[ -n "$license_content" ]]; then
-        echo "            license"
-        local license_json
-        license_json=""
-        while IFS= read -r line || [[ -n $line ]]; do
-          if [[ "$line" == "-----BEGIN PGP SIGNED MESSAGE-----" || "$line" == "Hash: "* ]]; then
-            # Skip PGP message header lines
-            continue
-          fi
-          if [[ "$line" == "-----BEGIN PGP SIGNATURE-----" ]]; then
-            # Stop when encountering the start of the signature
-            break
-          fi
-          if [[ -n "$license_json" ]]; then
-            license_json="${license_json} "
-          fi
-          license_json="${license_json}${line}"
-        done < <(printf '%s' "$license_content")
-        # shellcheck disable=SC2001
-        echo "$license_json" | sed -e 's/"name"[[:space:]]*:[[:space:]]*"[^"]*"/"name": "REDACTED"/' > "$location"/license.json
+      local license_content_encoded
+      license_content_encoded=$($KUBE_CLIENT get secrets -n "$namespace" "$license_secret_name" --ignore-not-found -ojsonpath="{.data.license}")
+      if [[ -n "$license_content_encoded" ]]; then
+        local license_content
+        license_content=$(echo "$license_content_encoded" | base64 -d ||true)
+        if [[ -n "$license_content" ]]; then
+          echo "            license"
+          local license_json
+          license_json=""
+          while IFS= read -r line || [[ -n $line ]]; do
+            if [[ "$line" == "-----BEGIN PGP SIGNED MESSAGE-----" || "$line" == "Hash: "* ]]; then
+              # Skip PGP message header lines
+              continue
+            fi
+            if [[ "$line" == "-----BEGIN PGP SIGNATURE-----" ]]; then
+              # Stop when encountering the start of the signature
+              break
+            fi
+            if [[ -n "$license_json" ]]; then
+              license_json="${license_json} "
+            fi
+            license_json="${license_json}${line}"
+          done < <(printf '%s' "$license_content")
+          # shellcheck disable=SC2001
+          echo "$license_json" | sed -e 's/"name"[[:space:]]*:[[:space:]]*"[^"]*"/"name": "REDACTED"/' > "$location"/license.json
+        fi
       fi
     fi
 
