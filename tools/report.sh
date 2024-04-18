@@ -203,9 +203,9 @@ get_namespaced_yamls() {
       local filename && filename=$(echo "$res" | cut -f 2 -d "/")
       echo "                    $res"
       if [[ "$SECRETS_OPT" == "all" ]]; then
-        $KUBE_CLIENT get "$res" -o yaml -n "$namespace" > "$location"/"$filename".yaml
+        $KUBE_CLIENT get "$res" -o yaml -n "$namespace" > "$location"/"$filename".yaml || true
       else
-        $KUBE_CLIENT get "$res" -o yaml -n "$namespace" | sed "$SE" > "$location"/"$filename".yaml
+        $KUBE_CLIENT get "$res" -o yaml -n "$namespace" | sed "$SE" > "$location"/"$filename".yaml || true
       fi
     done
   fi
