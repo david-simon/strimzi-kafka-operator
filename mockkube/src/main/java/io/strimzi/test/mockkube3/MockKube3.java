@@ -5,6 +5,8 @@
 package io.strimzi.test.mockkube3;
 
 import com.dajudge.kindcontainer.ApiServerContainer;
+import com.dajudge.kindcontainer.ApiServerContainerVersion;
+import com.dajudge.kindcontainer.KubernetesVersionEnum;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.fabric8.kubernetes.api.model.DefaultKubernetesResourceList;
 import io.fabric8.kubernetes.api.model.NamespaceBuilder;
@@ -40,7 +42,7 @@ import java.util.concurrent.TimeUnit;
  * running controllers.
  */
 public class MockKube3 {
-    private final static String ETCD_IMAGE = "registry.k8s.io/etcd:3.5.12-0";
+    private final static String ETCD_IMAGE = "docker-private.infra.cloudera.com/cloudera_thirdparty/etcd:3.5.12-0";
 
     private final ApiServerContainer<?> apiServer;
     private final List<AbstractMockController> controllers = new ArrayList<>();
@@ -57,7 +59,11 @@ public class MockKube3 {
      */
     public MockKube3() {
         // Override the Etcd version to get multiplatform support
-        this.apiServer = new ApiServerContainer<>().withEtcdImage(DockerImageName.parse(ETCD_IMAGE));
+        var latestVersion = KubernetesVersionEnum.latest(ApiServerContainerVersion.class);
+        var image = "docker-private.infra.cloudera.com/cloudera_thirdparty/kube-apiserver:"
+                + latestVersion.descriptor().getKubernetesVersion();
+        var imageSpec = latestVersion.withImage(image);
+        this.apiServer = new ApiServerContainer<>(imageSpec).withEtcdImage(DockerImageName.parse(ETCD_IMAGE));
     }
 
     /**
