@@ -135,7 +135,7 @@ metadata:
   name: ${pod_name}
   labels:
     strimzi.io/cluster: ${CLUSTER}
-    strimzi.io/kind: Kafka
+    strimzi.io/kind: KafkaAdminShell
     strimzi.io/name: ${CLUSTER}-kafka
 spec:
 ${image_pull_secrets}
