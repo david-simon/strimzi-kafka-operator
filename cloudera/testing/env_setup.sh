@@ -38,7 +38,7 @@ cloudera_base="docker-private.infra.cloudera.com/cloudera_base"
 registry_image="${cloudera_thirdparty}/registry:2.8.3"
 docker run -d -p 5000:5000 "${registry_image}"
 
-MINIKUBE_MEMORY=$(free -m | grep "Mem" | awk '{print $2}')
+MINIKUBE_MEMORY=$(free -m | grep "Mem" | awk '{print int($2*0.95)}')
 MINIKUBE_CPU=$(awk '$1~/cpu[0-9]/{usage=($2+$4)*100/($2+$4+$5); print $1": "usage"%"}' /proc/stat | wc -l)
 
 export MINIKUBE_WANTUPDATENOTIFICATION=false
