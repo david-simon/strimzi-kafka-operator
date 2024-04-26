@@ -4,6 +4,7 @@
  */
 package io.strimzi.operator.cluster.operator.assembly;
 
+import com.cloudera.operator.cluster.LicenseExpirationWatcher;
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.strimzi.api.kafka.model.common.Condition;
@@ -52,6 +53,7 @@ import static io.strimzi.operator.cluster.operator.resource.cruisecontrol.Cruise
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(VertxExtension.class)
@@ -73,12 +75,14 @@ public class KafkaRebalanceStateMachineTest {
                     .withMode(KafkaRebalanceMode.REMOVE_BROKERS)
                     .withBrokers(3)
                     .build();
+    private static final LicenseExpirationWatcher LEW = mock(LicenseExpirationWatcher.class);
 
     private static MockCruiseControl ccServer;
 
     @BeforeAll
     public static void before() throws IOException, URISyntaxException {
         ccServer = new MockCruiseControl(CruiseControl.REST_API_PORT);
+        when(LEW.isLicenseActive()).thenReturn(true);
     }
 
     @AfterAll
@@ -162,7 +166,7 @@ public class KafkaRebalanceStateMachineTest {
         CruiseControlApi client = new CruiseControlApiImpl(vertx, HTTP_DEFAULT_IDLE_TIMEOUT_SECONDS, MockCruiseControl.CC_SECRET, MockCruiseControl.CC_API_SECRET, true, true);
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(true);
         ConfigMapOperator mockCmOps = supplier.configMapOperations;
-        KafkaRebalanceAssemblyOperator kcrao = new KafkaRebalanceAssemblyOperator(vertx, supplier, ResourceUtils.dummyClusterOperatorConfig()) {
+        KafkaRebalanceAssemblyOperator kcrao = new KafkaRebalanceAssemblyOperator(vertx, supplier, ResourceUtils.dummyClusterOperatorConfig(), LEW) {
             @Override
             public String cruiseControlHost(String clusterName, String clusterNamespace) {
                 return HOST;

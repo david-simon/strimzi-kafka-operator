@@ -4,6 +4,7 @@
  */
 package io.strimzi.operator.cluster.operator.assembly;
 
+import com.cloudera.operator.cluster.LicenseExpirationWatcher;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBinding;
 import io.fabric8.kubernetes.client.CustomResource;
@@ -69,15 +70,17 @@ public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<K
     /**
      * Constructor
      *
-     * @param vertx     The Vertx instance
-     * @param pfa       Platform features availability properties
-     * @param supplier  Supplies the operators for different resources
-     * @param config    ClusterOperator configuration. Used to get the user-configured image pull policy and the secrets.
+     * @param vertx                     The Vertx instance
+     * @param pfa                       Platform features availability properties
+     * @param supplier                  Supplies the operators for different resources
+     * @param config                    ClusterOperator configuration. Used to get the user-configured image pull policy and the secrets.
+     * @param licenseExpirationWatcher  Cloudera license expiration watcher
      */
     public KafkaMirrorMaker2AssemblyOperator(Vertx vertx, PlatformFeaturesAvailability pfa,
                                         ResourceOperatorSupplier supplier,
-                                        ClusterOperatorConfig config) {
-        this(vertx, pfa, supplier, config, connect -> new KafkaConnectApiImpl(vertx));
+                                        ClusterOperatorConfig config,
+                                        LicenseExpirationWatcher licenseExpirationWatcher) {
+        this(vertx, pfa, supplier, config, connect -> new KafkaConnectApiImpl(vertx), licenseExpirationWatcher);
     }
 
     /**
@@ -88,12 +91,14 @@ public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<K
      * @param supplier                  Supplies the operators for different resources
      * @param config                    ClusterOperator configuration. Used to get the user-configured image pull policy and the secrets.
      * @param connectClientProvider     Connect REST APi client provider
+     * @param licenseExpirationWatcher  Cloudera license expiration watcher
      */
     protected KafkaMirrorMaker2AssemblyOperator(Vertx vertx, PlatformFeaturesAvailability pfa,
                                         ResourceOperatorSupplier supplier,
                                         ClusterOperatorConfig config,
-                                        Function<Vertx, KafkaConnectApi> connectClientProvider) {
-        super(vertx, pfa, KafkaMirrorMaker2.RESOURCE_KIND, supplier.mirrorMaker2Operator, supplier, config, connectClientProvider, KafkaConnectCluster.REST_API_PORT);
+                                        Function<Vertx, KafkaConnectApi> connectClientProvider,
+                                        LicenseExpirationWatcher licenseExpirationWatcher) {
+        super(vertx, pfa, KafkaMirrorMaker2.RESOURCE_KIND, supplier.mirrorMaker2Operator, supplier, config, connectClientProvider, KafkaConnectCluster.REST_API_PORT, licenseExpirationWatcher);
     }
 
     @Override

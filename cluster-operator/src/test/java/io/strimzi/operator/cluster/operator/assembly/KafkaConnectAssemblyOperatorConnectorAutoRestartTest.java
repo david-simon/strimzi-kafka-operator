@@ -4,6 +4,7 @@
  */
 package io.strimzi.operator.cluster.operator.assembly;
 
+import com.cloudera.operator.cluster.LicenseExpirationWatcher;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.strimzi.api.kafka.model.connector.AutoRestartStatusBuilder;
 import io.strimzi.api.kafka.model.connector.KafkaConnector;
@@ -46,11 +47,13 @@ import static org.mockito.Mockito.when;
 
 @ExtendWith(VertxExtension.class)
 public class KafkaConnectAssemblyOperatorConnectorAutoRestartTest {
+    private static final LicenseExpirationWatcher LEW = mock(LicenseExpirationWatcher.class);
     protected static Vertx vertx;
 
     @BeforeAll
     public static void before() {
         vertx = Vertx.vertx();
+        when(LEW.isLicenseActive()).thenReturn(true);
     }
 
     @AfterAll
@@ -63,7 +66,7 @@ public class KafkaConnectAssemblyOperatorConnectorAutoRestartTest {
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
 
         KafkaConnectAssemblyOperator op = new KafkaConnectAssemblyOperator(vertx, new PlatformFeaturesAvailability(true, KubernetesVersion.MINIMAL_SUPPORTED_VERSION),
-            supplier, ResourceUtils.dummyClusterOperatorConfig());
+            supplier, ResourceUtils.dummyClusterOperatorConfig(), LEW);
 
         // Should restart after minute 2 when auto restart count is 1
         var autoRestartStatus =  new AutoRestartStatusBuilder()
@@ -129,7 +132,7 @@ public class KafkaConnectAssemblyOperatorConnectorAutoRestartTest {
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
 
         KafkaConnectAssemblyOperator op = new KafkaConnectAssemblyOperator(vertx, new PlatformFeaturesAvailability(true, KubernetesVersion.MINIMAL_SUPPORTED_VERSION),
-                supplier, ResourceUtils.dummyClusterOperatorConfig());
+                supplier, ResourceUtils.dummyClusterOperatorConfig(), LEW);
 
         // Should reset after minute 2 when auto restart count is 1
         var autoRestartStatus =  new AutoRestartStatusBuilder()
@@ -194,7 +197,7 @@ public class KafkaConnectAssemblyOperatorConnectorAutoRestartTest {
                 .build();
 
         KafkaConnectAssemblyOperator op = new KafkaConnectAssemblyOperator(vertx, new PlatformFeaturesAvailability(true, KubernetesVersion.MINIMAL_SUPPORTED_VERSION),
-                supplier, ResourceUtils.dummyClusterOperatorConfig());
+                supplier, ResourceUtils.dummyClusterOperatorConfig(), LEW);
 
         Checkpoint checkpoint = context.checkpoint();
 
@@ -236,7 +239,7 @@ public class KafkaConnectAssemblyOperatorConnectorAutoRestartTest {
         when(connectorOperator.getAsync("my-namespace", "my-connector")).thenReturn(Future.succeededFuture(connector));
 
         KafkaConnectAssemblyOperator op = new KafkaConnectAssemblyOperator(vertx, new PlatformFeaturesAvailability(true, KubernetesVersion.MINIMAL_SUPPORTED_VERSION),
-                supplier, ResourceUtils.dummyClusterOperatorConfig());
+                supplier, ResourceUtils.dummyClusterOperatorConfig(), LEW);
 
         Checkpoint checkpoint = context.checkpoint();
 
@@ -279,7 +282,7 @@ public class KafkaConnectAssemblyOperatorConnectorAutoRestartTest {
         when(connectorOperator.getAsync("my-namespace", "my-connector")).thenReturn(Future.succeededFuture(connector));
 
         KafkaConnectAssemblyOperator op = new KafkaConnectAssemblyOperator(vertx, new PlatformFeaturesAvailability(true, KubernetesVersion.MINIMAL_SUPPORTED_VERSION),
-                supplier, ResourceUtils.dummyClusterOperatorConfig());
+                supplier, ResourceUtils.dummyClusterOperatorConfig(), LEW);
 
         Checkpoint checkpoint = context.checkpoint();
 
@@ -328,7 +331,7 @@ public class KafkaConnectAssemblyOperatorConnectorAutoRestartTest {
         when(connectorOperator.getAsync("my-namespace", "my-connector")).thenReturn(Future.succeededFuture(connector));
 
         KafkaConnectAssemblyOperator op = new KafkaConnectAssemblyOperator(vertx, new PlatformFeaturesAvailability(true, KubernetesVersion.MINIMAL_SUPPORTED_VERSION),
-                supplier, ResourceUtils.dummyClusterOperatorConfig());
+                supplier, ResourceUtils.dummyClusterOperatorConfig(), LEW);
 
         Checkpoint checkpoint = context.checkpoint();
 
@@ -377,7 +380,7 @@ public class KafkaConnectAssemblyOperatorConnectorAutoRestartTest {
         when(connectorOperator.getAsync("my-namespace", "my-connector")).thenReturn(Future.succeededFuture(connector));
 
         KafkaConnectAssemblyOperator op = new KafkaConnectAssemblyOperator(vertx, new PlatformFeaturesAvailability(true, KubernetesVersion.MINIMAL_SUPPORTED_VERSION),
-                supplier, ResourceUtils.dummyClusterOperatorConfig());
+                supplier, ResourceUtils.dummyClusterOperatorConfig(), LEW);
 
         Checkpoint checkpoint = context.checkpoint();
 
@@ -426,7 +429,7 @@ public class KafkaConnectAssemblyOperatorConnectorAutoRestartTest {
         when(connectorOperator.getAsync("my-namespace", "my-connector")).thenReturn(Future.succeededFuture(connector));
 
         KafkaConnectAssemblyOperator op = new KafkaConnectAssemblyOperator(vertx, new PlatformFeaturesAvailability(true, KubernetesVersion.MINIMAL_SUPPORTED_VERSION),
-                supplier, ResourceUtils.dummyClusterOperatorConfig());
+                supplier, ResourceUtils.dummyClusterOperatorConfig(), LEW);
 
         Checkpoint checkpoint = context.checkpoint();
 
@@ -472,7 +475,7 @@ public class KafkaConnectAssemblyOperatorConnectorAutoRestartTest {
         when(connectorOperator.getAsync("my-namespace", "my-connector")).thenReturn(Future.succeededFuture(connector));
 
         KafkaConnectAssemblyOperator op = new KafkaConnectAssemblyOperator(vertx, new PlatformFeaturesAvailability(true, KubernetesVersion.MINIMAL_SUPPORTED_VERSION),
-                supplier, ResourceUtils.dummyClusterOperatorConfig());
+                supplier, ResourceUtils.dummyClusterOperatorConfig(), LEW);
 
         Checkpoint checkpoint = context.checkpoint();
 

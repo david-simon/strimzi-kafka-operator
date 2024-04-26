@@ -4,6 +4,7 @@
  */
 package io.strimzi.operator.cluster.operator.assembly;
 
+import com.cloudera.operator.cluster.LicenseExpirationWatcher;
 import io.fabric8.kubernetes.api.model.ServiceAccount;
 import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBinding;
 import io.fabric8.kubernetes.client.KubernetesClient;
@@ -56,12 +57,14 @@ public class KafkaBridgeAssemblyOperator extends AbstractAssemblyOperator<Kubern
      * @param passwordGenerator Password generator
      * @param supplier Supplies the operators for different resources
      * @param config ClusterOperator configuration. Used to get the user-configured image pull policy and the secrets.
+     * @param licenseExpirationWatcher Cloudera license expiration watcher
      */
     public KafkaBridgeAssemblyOperator(Vertx vertx, PlatformFeaturesAvailability pfa,
                                        CertManager certManager, PasswordGenerator passwordGenerator,
                                        ResourceOperatorSupplier supplier,
-                                       ClusterOperatorConfig config) {
-        super(vertx, pfa, KafkaBridge.RESOURCE_KIND, certManager, passwordGenerator, supplier.kafkaBridgeOperator, supplier, config);
+                                       ClusterOperatorConfig config,
+                                       LicenseExpirationWatcher licenseExpirationWatcher) {
+        super(vertx, pfa, KafkaBridge.RESOURCE_KIND, certManager, passwordGenerator, supplier.kafkaBridgeOperator, supplier, config, licenseExpirationWatcher);
         this.deploymentOperations = supplier.deploymentOperations;
         this.sharedEnvironmentProvider = supplier.sharedEnvironmentProvider;
     }

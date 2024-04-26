@@ -4,6 +4,7 @@
  */
 package io.strimzi.operator.cluster.operator.assembly;
 
+import com.cloudera.operator.cluster.LicenseExpirationWatcher;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.strimzi.api.kafka.Crds;
@@ -55,6 +56,7 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
@@ -81,6 +83,7 @@ public class KafkaMirrorMaker2AssemblyOperatorMockTest {
 
     private static Vertx vertx;
     private KafkaMirrorMaker2AssemblyOperator kco;
+    private LicenseExpirationWatcher licenseExpirationWatcher;
 
     @BeforeAll
     public static void beforeAll() {
@@ -122,6 +125,9 @@ public class KafkaMirrorMaker2AssemblyOperatorMockTest {
                 PFA, 60_000L);
         podSetController = new StrimziPodSetController(namespace, Labels.EMPTY, supplier.kafkaOperator, supplier.connectOperator, supplier.mirrorMaker2Operator, supplier.strimziPodSetOperator, supplier.podOperations, supplier.metricsProvider, Integer.parseInt(ClusterOperatorConfig.POD_SET_CONTROLLER_WORK_QUEUE_SIZE.defaultValue()));
         podSetController.start();
+
+        licenseExpirationWatcher = mock(LicenseExpirationWatcher.class);
+        when(licenseExpirationWatcher.isLicenseActive()).thenReturn(true);
     }
 
     @AfterEach
@@ -135,7 +141,8 @@ public class KafkaMirrorMaker2AssemblyOperatorMockTest {
         kco = new KafkaMirrorMaker2AssemblyOperator(vertx, PFA,
             supplier,
             config,
-            foo -> kafkaConnectApi);
+            foo -> kafkaConnectApi,
+            licenseExpirationWatcher);
 
         LOGGER.info("Reconciling initially -> create");
         Promise<Void> created = Promise.promise();
@@ -159,22 +166,27 @@ public class KafkaMirrorMaker2AssemblyOperatorMockTest {
     }
 
     @Test
-    public void testReconcileUpdate(VertxTestContext context) {
-        Crds.kafkaMirrorMaker2Operation(client).resource(new KafkaMirrorMaker2Builder()
-                .withNewMetadata()
-                    .withName(CLUSTER_NAME)
-                    .withNamespace(namespace)
-                    .withLabels(TestUtils.map("foo", "bar"))
-                .endMetadata()
-                .withNewSpec()
-                    .withReplicas(REPLICAS)
-                    .withConnectCluster("target")
-                    .withClusters(new KafkaMirrorMaker2ClusterSpecBuilder().withAlias("source").withBootstrapServers("source:9092").build(),
-                            new KafkaMirrorMaker2ClusterSpecBuilder().withAlias("target").withBootstrapServers("target:9092").build())
-                    .withMirrors(List.of())
-                .endSpec()
-            .build()).create();
+    public void testInactiveLicense(VertxTestContext context) {
+        createCluster(false);
+        var kafkaConnectApi = mock(KafkaConnectApi.class);
+        when(kafkaConnectApi.list(any(), anyString(), anyInt())).thenReturn(Future.succeededFuture(emptyList()));
+        when(kafkaConnectApi.updateConnectLoggers(any(), anyString(), anyInt(), anyString(), any(OrderedProperties.class))).thenReturn(Future.succeededFuture());
 
+        when(licenseExpirationWatcher.isLicenseActive()).thenReturn(false);
+        kco = new KafkaMirrorMaker2AssemblyOperator(vertx, PFA, supplier,
+                ResourceUtils.dummyClusterOperatorConfig(VERSIONS), foo -> kafkaConnectApi, licenseExpirationWatcher);
+
+        var async = context.checkpoint();
+        kco.reconcile(new Reconciliation("test-trigger", KafkaMirrorMaker2.RESOURCE_KIND, namespace, CLUSTER_NAME))
+                .onComplete(context.failing(e -> context.verify(() -> {
+                    assertEquals(AbstractOperator.INVALID_LICENSE_MSG, e.getMessage());
+                    async.flag();
+                })));
+    }
+
+    @Test
+    public void testReconcileUpdate(VertxTestContext context) {
+        createCluster(false);
         KafkaConnectApi mock = mock(KafkaConnectApi.class);
         when(mock.list(any(), anyString(), anyInt())).thenReturn(Future.succeededFuture(emptyList()));
         when(mock.updateConnectLoggers(any(), anyString(), anyInt(), anyString(), any(OrderedProperties.class))).thenReturn(Future.succeededFuture());
@@ -191,22 +203,7 @@ public class KafkaMirrorMaker2AssemblyOperatorMockTest {
 
     @Test
     public void testPauseReconcile(VertxTestContext context) {
-        Crds.kafkaMirrorMaker2Operation(client).resource(new KafkaMirrorMaker2Builder()
-                .withNewMetadata()
-                    .withName(CLUSTER_NAME)
-                    .withNamespace(namespace)
-                    .withLabels(TestUtils.map("foo", "bar"))
-                    .withAnnotations(singletonMap("strimzi.io/pause-reconciliation", "true"))
-                .endMetadata()
-                .withNewSpec()
-                    .withReplicas(REPLICAS)
-                    .withConnectCluster("target")
-                    .withClusters(new KafkaMirrorMaker2ClusterSpecBuilder().withAlias("source").withBootstrapServers("source:9092").build(),
-                            new KafkaMirrorMaker2ClusterSpecBuilder().withAlias("target").withBootstrapServers("target:9092").build())
-                    .withMirrors(List.of())
-                .endSpec()
-                .build()).create();
-
+        createCluster(true);
         KafkaConnectApi mock = mock(KafkaConnectApi.class);
         when(mock.list(any(), anyString(), anyInt())).thenReturn(Future.succeededFuture(emptyList()));
         when(mock.updateConnectLoggers(any(), anyString(), anyInt(), anyString(), any(OrderedProperties.class))).thenReturn(Future.succeededFuture());
@@ -236,5 +233,23 @@ public class KafkaMirrorMaker2AssemblyOperatorMockTest {
                     assertTrue(conditionFound);
                     async.flag();
                 })));
+    }
+
+    private void createCluster(Boolean isReconciliationPaused) {
+        Crds.kafkaMirrorMaker2Operation(client).resource(new KafkaMirrorMaker2Builder()
+                .withNewMetadata()
+                    .withName(CLUSTER_NAME)
+                    .withNamespace(namespace)
+                    .withLabels(TestUtils.map("foo", "bar"))
+                    .withAnnotations(singletonMap("strimzi.io/pause-reconciliation", isReconciliationPaused.toString()))
+                .endMetadata()
+                .withNewSpec()
+                    .withReplicas(REPLICAS)
+                    .withConnectCluster("target")
+                    .withClusters(new KafkaMirrorMaker2ClusterSpecBuilder().withAlias("source").withBootstrapServers("source:9092").build(),
+                            new KafkaMirrorMaker2ClusterSpecBuilder().withAlias("target").withBootstrapServers("target:9092").build())
+                    .withMirrors(List.of())
+                .endSpec()
+                .build()).create();
     }
 }

@@ -4,6 +4,7 @@
  */
 package io.strimzi.operator.cluster.operator.assembly;
 
+import com.cloudera.operator.cluster.LicenseExpirationWatcher;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.strimzi.api.kafka.Crds;
@@ -50,6 +51,8 @@ import java.util.Map;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 @ExtendWith(VertxExtension.class)
 @Disabled // TODO: Remove this when we have upgrade support (CSMDS-298)
@@ -88,6 +91,7 @@ public class KafkaUpgradeDowngradeMockTest {
                     .endEntityOperator()
                 .endSpec()
                 .build();
+    private static final LicenseExpirationWatcher LEW = mock(LicenseExpirationWatcher.class);
 
     private static Vertx vertx;
     private static WorkerExecutor sharedWorkerExecutor;
@@ -122,6 +126,7 @@ public class KafkaUpgradeDowngradeMockTest {
 
         vertx = Vertx.vertx();
         sharedWorkerExecutor = vertx.createSharedWorkerExecutor("kubernetes-ops-pool");
+        when(LEW.isLicenseActive()).thenReturn(true);
     }
 
     @AfterAll
@@ -154,7 +159,7 @@ public class KafkaUpgradeDowngradeMockTest {
         ClusterOperatorConfig config = ResourceUtils.dummyClusterOperatorConfig(VERSIONS);
 
         operator = new KafkaAssemblyOperator(vertx, PFA, new MockCertManager(),
-                new PasswordGenerator(10, "a", "a"), supplier, config);
+                new PasswordGenerator(10, "a", "a"), supplier, config, LEW);
 
         LOGGER.info("Reconciling initially -> create");
         return operator.reconcile(new Reconciliation("initial-reconciliation", Kafka.RESOURCE_KIND, namespace, CLUSTER_NAME));

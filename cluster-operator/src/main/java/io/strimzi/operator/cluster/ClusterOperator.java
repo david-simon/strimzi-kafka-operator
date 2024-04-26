@@ -4,7 +4,6 @@
  */
 package io.strimzi.operator.cluster;
 
-import com.cloudera.operator.cluster.LicenseExpirationWatcher;
 import io.strimzi.api.kafka.model.connector.KafkaConnector;
 import io.strimzi.api.kafka.model.nodepool.KafkaNodePool;
 import io.strimzi.operator.cluster.operator.assembly.AbstractOperator;
@@ -55,7 +54,6 @@ public class ClusterOperator extends AbstractVerticle {
     private final KafkaBridgeAssemblyOperator kafkaBridgeAssemblyOperator;
     private final KafkaRebalanceAssemblyOperator kafkaRebalanceAssemblyOperator;
     private final ResourceOperatorSupplier resourceOperatorSupplier;
-    private final LicenseExpirationWatcher licenseExpirationWatcher;
 
     private StrimziPodSetController strimziPodSetController;
 
@@ -75,7 +73,6 @@ public class ClusterOperator extends AbstractVerticle {
      * @param kafkaBridgeAssemblyOperator       KafkaBridge operator
      * @param kafkaRebalanceAssemblyOperator    KafkaRebalance operator
      * @param resourceOperatorSupplier          Resource operator supplier
-     * @param licenseExpirationWatcher          License expiration watcher
      */
     public ClusterOperator(String namespace,
                            ClusterOperatorConfig config,
@@ -85,8 +82,7 @@ public class ClusterOperator extends AbstractVerticle {
                            KafkaMirrorMaker2AssemblyOperator kafkaMirrorMaker2AssemblyOperator,
                            KafkaBridgeAssemblyOperator kafkaBridgeAssemblyOperator,
                            KafkaRebalanceAssemblyOperator kafkaRebalanceAssemblyOperator,
-                           ResourceOperatorSupplier resourceOperatorSupplier,
-                           LicenseExpirationWatcher licenseExpirationWatcher) {
+                           ResourceOperatorSupplier resourceOperatorSupplier) {
         LOGGER.info("Creating ClusterOperator for namespace {}", namespace);
         this.namespace = namespace;
         this.config = config;
@@ -97,7 +93,6 @@ public class ClusterOperator extends AbstractVerticle {
         this.kafkaBridgeAssemblyOperator = kafkaBridgeAssemblyOperator;
         this.kafkaRebalanceAssemblyOperator = kafkaRebalanceAssemblyOperator;
         this.resourceOperatorSupplier = resourceOperatorSupplier;
-        this.licenseExpirationWatcher = licenseExpirationWatcher;
     }
 
     @Override
@@ -194,11 +189,7 @@ public class ClusterOperator extends AbstractVerticle {
     /**
       Periodical reconciliation (in case we lost some event)
      */
-    void reconcileAll(String trigger) {
-        if (licenseExpirationWatcher == null || !licenseExpirationWatcher.isLicenseActive()) {
-            return;
-        }
-
+    private void reconcileAll(String trigger) {
         if (!config.isPodSetReconciliationOnly()) {
             Handler<AsyncResult<Void>> ignore = ignored -> {
             };

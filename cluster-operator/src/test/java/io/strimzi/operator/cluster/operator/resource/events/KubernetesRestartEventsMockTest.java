@@ -4,6 +4,7 @@
  */
 package io.strimzi.operator.cluster.operator.resource.events;
 
+import com.cloudera.operator.cluster.LicenseExpirationWatcher;
 import io.fabric8.kubernetes.api.model.PersistentVolumeClaim;
 import io.fabric8.kubernetes.api.model.PersistentVolumeClaimBuilder;
 import io.fabric8.kubernetes.api.model.PersistentVolumeClaimList;
@@ -127,6 +128,7 @@ public class KubernetesRestartEventsMockTest {
             VERSIONS.defaultVersion().messageVersion(),
             VERSIONS.defaultVersion().metadataVersion()
     );
+    private static final LicenseExpirationWatcher LEW = mock(LicenseExpirationWatcher.class);
 
     private static KubernetesClient client;
     private static MockKube3 mockKube;
@@ -163,6 +165,7 @@ public class KubernetesRestartEventsMockTest {
                 .build();
         mockKube.start();
         client = mockKube.client();
+        when(LEW.isLicenseActive()).thenReturn(true);
     }
 
     @AfterAll
@@ -193,7 +196,7 @@ public class KubernetesRestartEventsMockTest {
         podSetController.start();
 
         // Initial reconciliation to create cluster
-        KafkaAssemblyOperator kao = new KafkaAssemblyOperator(vertx, PFA, mockCertManager, passwordGenerator, supplier, clusterOperatorConfig);
+        KafkaAssemblyOperator kao = new KafkaAssemblyOperator(vertx, PFA, mockCertManager, passwordGenerator, supplier, clusterOperatorConfig, LEW);
         kao.reconcile(new Reconciliation("initial", "kafka", namespace, CLUSTER_NAME)).toCompletionStage().toCompletableFuture().get();
 
         reconciliation = new Reconciliation("test", Kafka.RESOURCE_KIND, namespace, CLUSTER_NAME);

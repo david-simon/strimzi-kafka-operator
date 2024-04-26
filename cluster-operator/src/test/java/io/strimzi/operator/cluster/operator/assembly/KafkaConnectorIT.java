@@ -4,6 +4,7 @@
  */
 package io.strimzi.operator.cluster.operator.assembly;
 
+import com.cloudera.operator.cluster.LicenseExpirationWatcher;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.strimzi.api.kafka.Crds;
@@ -62,9 +63,12 @@ import static org.hamcrest.Matchers.hasProperty;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 @ExtendWith(VertxExtension.class)
 public class KafkaConnectorIT {
+    private static final LicenseExpirationWatcher LEW = mock(LicenseExpirationWatcher.class);
     private static StrimziKafkaCluster cluster;
     private static Vertx vertx;
     private static KubernetesClient client;
@@ -86,6 +90,7 @@ public class KafkaConnectorIT {
                 .build();
         mockKube.start();
         client = mockKube.client();
+        when(LEW.isLicenseActive()).thenReturn(true);
     }
 
     @AfterAll
@@ -158,7 +163,8 @@ public class KafkaConnectorIT {
         KafkaConnectAssemblyOperator operator = new KafkaConnectAssemblyOperator(vertx, pfa, ros,
                 ClusterOperatorConfig.buildFromMap(Map.of(), KafkaVersionTestUtils.getKafkaVersionLookup()),
             connect -> new KafkaConnectApiImpl(vertx),
-            connectCluster.getPort(2)
+            connectCluster.getPort(2),
+            LEW
         ) { };
 
         Checkpoint async = context.checkpoint();
@@ -228,7 +234,8 @@ public class KafkaConnectorIT {
         KafkaConnectAssemblyOperator operator = new KafkaConnectAssemblyOperator(vertx, pfa, ros,
                 ClusterOperatorConfig.buildFromMap(Map.of(), KafkaVersionTestUtils.getKafkaVersionLookup()),
                 connect -> new KafkaConnectApiImpl(vertx),
-                connectCluster.getPort(2)
+                connectCluster.getPort(2),
+                LEW
         ) { };
 
         operator.reconcileConnectorAndHandleResult(new Reconciliation("test", "KafkaConnect", namespace, "bogus"),
@@ -277,7 +284,8 @@ public class KafkaConnectorIT {
         KafkaConnectAssemblyOperator operator = new KafkaConnectAssemblyOperator(vertx, pfa, ros,
                 ClusterOperatorConfig.buildFromMap(Map.of(), KafkaVersionTestUtils.getKafkaVersionLookup()),
                 connect -> new KafkaConnectApiImpl(vertx),
-                connectCluster.getPort(2)
+                connectCluster.getPort(2),
+                LEW
         ) { };
 
         operator.reconcileConnectorAndHandleResult(new Reconciliation("test", "KafkaConnect", namespace, "bogus"),
@@ -337,7 +345,8 @@ public class KafkaConnectorIT {
         KafkaConnectAssemblyOperator operator = new KafkaConnectAssemblyOperator(vertx, pfa, ros,
             ClusterOperatorConfig.buildFromMap(Map.of(), KafkaVersionTestUtils.getKafkaVersionLookup()),
             connect -> new KafkaConnectApiImpl(vertx),
-            connectCluster.getPort(2)
+            connectCluster.getPort(2),
+                LEW
         ) { };
 
         operator.reconcileConnectorAndHandleResult(new Reconciliation("test", "KafkaConnect", namespace, "bogus"),
@@ -386,7 +395,8 @@ public class KafkaConnectorIT {
         KafkaConnectAssemblyOperator operator = new KafkaConnectAssemblyOperator(vertx, pfa, ros,
             ClusterOperatorConfig.buildFromMap(Map.of(), KafkaVersionTestUtils.getKafkaVersionLookup()),
             connect -> new KafkaConnectApiImpl(vertx),
-            connectCluster.getPort(2)
+            connectCluster.getPort(2),
+            LEW
         ) { };
 
         operator.reconcileConnectorAndHandleResult(new Reconciliation("test", "KafkaConnect", namespace, "bogus"),

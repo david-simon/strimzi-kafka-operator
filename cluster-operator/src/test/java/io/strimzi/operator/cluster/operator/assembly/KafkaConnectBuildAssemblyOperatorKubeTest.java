@@ -4,6 +4,7 @@
  */
 package io.strimzi.operator.cluster.operator.assembly;
 
+import com.cloudera.operator.cluster.LicenseExpirationWatcher;
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ContainerStatusBuilder;
 import io.fabric8.kubernetes.api.model.LabelSelector;
@@ -90,6 +91,7 @@ public class KafkaConnectBuildAssemblyOperatorKubeTest {
 
     private static final String OUTPUT_IMAGE = "my-connect-build:latest";
     private static final String OUTPUT_IMAGE_HASH_STUB = Util.hashStub(OUTPUT_IMAGE);
+    private static final LicenseExpirationWatcher LEW = mock(LicenseExpirationWatcher.class);
 
     protected static Vertx vertx;
     private final KubernetesVersion kubernetesVersion = KubernetesVersion.MINIMAL_SUPPORTED_VERSION;
@@ -99,6 +101,7 @@ public class KafkaConnectBuildAssemblyOperatorKubeTest {
     @BeforeAll
     public static void before() {
         vertx = Vertx.vertx();
+        when(LEW.isLicenseActive()).thenReturn(true);
     }
 
     @AfterAll
@@ -230,7 +233,7 @@ public class KafkaConnectBuildAssemblyOperatorKubeTest {
 
         // Prepare and run reconciliation
         KafkaConnectAssemblyOperator ops = new KafkaConnectAssemblyOperator(vertx, new PlatformFeaturesAvailability(false, kubernetesVersion),
-                supplier, ResourceUtils.dummyClusterOperatorConfig(VERSIONS), x -> mockConnectClient);
+                supplier, ResourceUtils.dummyClusterOperatorConfig(VERSIONS), x -> mockConnectClient, LEW);
 
         KafkaConnectCluster connect = KafkaConnectCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kc, VERSIONS, sharedEnvironmentProvider);
 
@@ -388,7 +391,7 @@ public class KafkaConnectBuildAssemblyOperatorKubeTest {
 
         // Prepare and run reconciliation
         KafkaConnectAssemblyOperator ops = new KafkaConnectAssemblyOperator(vertx, new PlatformFeaturesAvailability(false, kubernetesVersion),
-                supplier, ResourceUtils.dummyClusterOperatorConfig(VERSIONS), x -> mockConnectClient);
+                supplier, ResourceUtils.dummyClusterOperatorConfig(VERSIONS), x -> mockConnectClient, LEW);
 
         Checkpoint async = context.checkpoint();
         ops.reconcile(new Reconciliation("test-trigger", KafkaConnect.RESOURCE_KIND, NAMESPACE, NAME))
@@ -549,7 +552,7 @@ public class KafkaConnectBuildAssemblyOperatorKubeTest {
 
         // Prepare and run reconciliation
         KafkaConnectAssemblyOperator ops = new KafkaConnectAssemblyOperator(vertx, new PlatformFeaturesAvailability(false, kubernetesVersion),
-                supplier, ResourceUtils.dummyClusterOperatorConfig(VERSIONS), x -> mockConnectClient);
+                supplier, ResourceUtils.dummyClusterOperatorConfig(VERSIONS), x -> mockConnectClient, LEW);
 
         KafkaConnectCluster connect = KafkaConnectCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kc, VERSIONS, sharedEnvironmentProvider);
 
@@ -737,7 +740,7 @@ public class KafkaConnectBuildAssemblyOperatorKubeTest {
 
         // Prepare and run reconciliation
         KafkaConnectAssemblyOperator ops = new KafkaConnectAssemblyOperator(vertx, new PlatformFeaturesAvailability(false, kubernetesVersion),
-                supplier, ResourceUtils.dummyClusterOperatorConfig(VERSIONS), x -> mockConnectClient);
+                supplier, ResourceUtils.dummyClusterOperatorConfig(VERSIONS), x -> mockConnectClient, LEW);
 
         KafkaConnectCluster connect = KafkaConnectCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kc, VERSIONS, sharedEnvironmentProvider);
 
@@ -936,7 +939,7 @@ public class KafkaConnectBuildAssemblyOperatorKubeTest {
 
         // Prepare and run reconciliation
         KafkaConnectAssemblyOperator ops = new KafkaConnectAssemblyOperator(vertx, new PlatformFeaturesAvailability(false, kubernetesVersion),
-                supplier, ResourceUtils.dummyClusterOperatorConfig(VERSIONS), x -> mockConnectClient);
+                supplier, ResourceUtils.dummyClusterOperatorConfig(VERSIONS), x -> mockConnectClient, LEW);
 
         KafkaConnectCluster connect = KafkaConnectCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kc, VERSIONS, sharedEnvironmentProvider);
 
@@ -1133,7 +1136,7 @@ public class KafkaConnectBuildAssemblyOperatorKubeTest {
 
         // Prepare and run reconciliation
         KafkaConnectAssemblyOperator ops = new KafkaConnectAssemblyOperator(vertx, new PlatformFeaturesAvailability(false, kubernetesVersion),
-                supplier, ResourceUtils.dummyClusterOperatorConfig(VERSIONS), x -> mockConnectClient);
+                supplier, ResourceUtils.dummyClusterOperatorConfig(VERSIONS), x -> mockConnectClient, LEW);
 
         KafkaConnectCluster connect = KafkaConnectCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kc, VERSIONS, sharedEnvironmentProvider);
 
@@ -1335,7 +1338,7 @@ public class KafkaConnectBuildAssemblyOperatorKubeTest {
 
         // Prepare and run reconciliation
         KafkaConnectAssemblyOperator ops = new KafkaConnectAssemblyOperator(vertx, new PlatformFeaturesAvailability(false, kubernetesVersion),
-                supplier, ResourceUtils.dummyClusterOperatorConfig(VERSIONS), x -> mockConnectClient);
+                supplier, ResourceUtils.dummyClusterOperatorConfig(VERSIONS), x -> mockConnectClient, LEW);
 
         KafkaConnectCluster connect = KafkaConnectCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kc, VERSIONS, sharedEnvironmentProvider);
 
@@ -1485,7 +1488,7 @@ public class KafkaConnectBuildAssemblyOperatorKubeTest {
 
         // Prepare and run reconciliation
         KafkaConnectAssemblyOperator ops = new KafkaConnectAssemblyOperator(vertx, new PlatformFeaturesAvailability(false, kubernetesVersion),
-                supplier, ResourceUtils.dummyClusterOperatorConfig(VERSIONS), x -> mockConnectClient);
+                supplier, ResourceUtils.dummyClusterOperatorConfig(VERSIONS), x -> mockConnectClient, LEW);
 
         Checkpoint async = context.checkpoint();
         ops.reconcile(new Reconciliation("test-trigger", KafkaConnect.RESOURCE_KIND, NAMESPACE, NAME))
@@ -1652,7 +1655,7 @@ public class KafkaConnectBuildAssemblyOperatorKubeTest {
 
         // Prepare and run reconciliation
         KafkaConnectAssemblyOperator ops = new KafkaConnectAssemblyOperator(vertx, new PlatformFeaturesAvailability(false, kubernetesVersion),
-                supplier, ResourceUtils.dummyClusterOperatorConfig(VERSIONS), x -> mockConnectClient);
+                supplier, ResourceUtils.dummyClusterOperatorConfig(VERSIONS), x -> mockConnectClient, LEW);
 
         Checkpoint async = context.checkpoint();
         ops.reconcile(new Reconciliation("test-trigger", KafkaConnect.RESOURCE_KIND, NAMESPACE, NAME))

@@ -4,6 +4,7 @@
  */
 package io.strimzi.operator.cluster.operator.assembly;
 
+import com.cloudera.operator.cluster.LicenseExpirationWatcher;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.ObjectMeta;
 import io.fabric8.kubernetes.client.CustomResource;
@@ -46,12 +47,15 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.greaterThan;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 @ExtendWith(VertxExtension.class)
 @Group("strimzi")
 @Version("v1")
 @SuppressWarnings({"unchecked", "rawtypes"})
 public class OperatorMetricsTest {
+    private static final LicenseExpirationWatcher LEW = mock(LicenseExpirationWatcher.class);
     private static Vertx vertx;
 
     @BeforeAll
@@ -61,6 +65,7 @@ public class OperatorMetricsTest {
                         .setPrometheusOptions(new VertxPrometheusOptions().setEnabled(true))
                         .setEnabled(true)
         ));
+        when(LEW.isLicenseActive()).thenReturn(true);
     }
 
     @AfterAll
@@ -73,7 +78,7 @@ public class OperatorMetricsTest {
 
         AbstractWatchableStatusedNamespacedResourceOperator resourceOperator = resourceOperatorWithExistingResourceWithSelectorLabel(selectorLabels);
 
-        AbstractOperator operator = new AbstractOperator(vertx, "TestResource", resourceOperator, metricsProvider, selectorLabels) {
+        AbstractOperator operator = new AbstractOperator(vertx, "TestResource", resourceOperator, metricsProvider, selectorLabels, LEW) {
             @Override
             protected Future createOrUpdate(Reconciliation reconciliation, CustomResource resource) {
                 return Future.succeededFuture();
@@ -135,7 +140,7 @@ public class OperatorMetricsTest {
 
         AbstractWatchableStatusedNamespacedResourceOperator resourceOperator = resourceOperatorWithExistingResourceWithSelectorLabel(selectorLabels);
 
-        AbstractOperator operator = new AbstractOperator(vertx, "TestResource", resourceOperator, metricsProvider, selectorLabels) {
+        AbstractOperator operator = new AbstractOperator(vertx, "TestResource", resourceOperator, metricsProvider, selectorLabels, LEW) {
             @Override
             protected Future createOrUpdate(Reconciliation reconciliation, CustomResource resource) {
                 return Future.failedFuture(new RuntimeException("Test error"));
@@ -199,7 +204,7 @@ public class OperatorMetricsTest {
 
         AbstractWatchableStatusedNamespacedResourceOperator resourceOperator = resourceOperatorWithExistingPausedResource();
 
-        AbstractOperator operator = new AbstractOperator(vertx, "TestResource", resourceOperator, metricsProvider, null) {
+        AbstractOperator operator = new AbstractOperator(vertx, "TestResource", resourceOperator, metricsProvider, null, LEW) {
             @Override
             protected Future createOrUpdate(Reconciliation reconciliation, CustomResource resource) {
                 return Future.succeededFuture();
@@ -249,7 +254,7 @@ public class OperatorMetricsTest {
 
         AbstractWatchableStatusedNamespacedResourceOperator resourceOperator = resourceOperatorWithExistingResourceWithoutSelectorLabel();
 
-        AbstractOperator operator = new AbstractOperator(vertx, "TestResource", resourceOperator, metricsProvider, null) {
+        AbstractOperator operator = new AbstractOperator(vertx, "TestResource", resourceOperator, metricsProvider, null, LEW) {
             @Override
             protected Future createOrUpdate(Reconciliation reconciliation, CustomResource resource) {
                 return Future.failedFuture(new UnableToAcquireLockException());
@@ -306,7 +311,7 @@ public class OperatorMetricsTest {
             }
         };
 
-        AbstractOperator operator = new AbstractOperator(vertx, "TestResource", resourceOperator, metricsProvider, null) {
+        AbstractOperator operator = new AbstractOperator(vertx, "TestResource", resourceOperator, metricsProvider, null, LEW) {
             @Override
             protected Future createOrUpdate(Reconciliation reconciliation, CustomResource resource) {
                 return null;
@@ -575,7 +580,7 @@ public class OperatorMetricsTest {
         private Set<NamespaceAndName> resources;
 
         public ReconcileAllMockOperator(Vertx vertx, String kind, AbstractWatchableStatusedNamespacedResourceOperator resourceOperator, MetricsProvider metrics, Labels selectorLabels) {
-            super(vertx, kind, resourceOperator, metrics, selectorLabels);
+            super(vertx, kind, resourceOperator, metrics, selectorLabels, LEW);
         }
 
         @Override

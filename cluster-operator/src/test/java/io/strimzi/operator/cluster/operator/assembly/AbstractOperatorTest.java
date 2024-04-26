@@ -4,6 +4,7 @@
  */
 package io.strimzi.operator.cluster.operator.assembly;
 
+import com.cloudera.operator.cluster.LicenseExpirationWatcher;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.KubernetesResourceList;
 import io.fabric8.kubernetes.client.CustomResource;
@@ -36,11 +37,14 @@ import java.util.concurrent.TimeUnit;
 import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 @ExtendWith(VertxExtension.class)
 class AbstractOperatorTest {
     private static Vertx vertx;
     private static final String EXPECTED_MESSAGE = "Exception is expected";
+    private static final LicenseExpirationWatcher LEW = mock(LicenseExpirationWatcher.class);
 
     @BeforeAll
     public static void before() {
@@ -48,6 +52,7 @@ class AbstractOperatorTest {
                 .setBlockedThreadCheckInterval(60)
                 .setBlockedThreadCheckIntervalUnit(TimeUnit.SECONDS)
         );
+        when(LEW.isLicenseActive()).thenReturn(true);
     }
 
     @AfterAll
@@ -221,7 +226,7 @@ class AbstractOperatorTest {
                 extends AbstractOperator<T, P, S, O> {
 
         public DefaultOperator(Vertx vertx, String kind, O resourceOperator, MetricsProvider metrics, Labels selectorLabels) {
-            super(vertx, kind, resourceOperator, metrics, selectorLabels);
+            super(vertx, kind, resourceOperator, metrics, selectorLabels, LEW);
         }
 
         @Override

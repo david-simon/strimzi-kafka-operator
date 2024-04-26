@@ -4,6 +4,7 @@
  */
 package io.strimzi.operator.cluster.operator.assembly;
 
+import com.cloudera.operator.cluster.LicenseExpirationWatcher;
 import io.fabric8.kubernetes.api.model.DeletionPropagation;
 import io.fabric8.kubernetes.api.model.PersistentVolumeClaim;
 import io.fabric8.kubernetes.api.model.Volume;
@@ -73,7 +74,10 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.aMapWithSize;
 import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.Matchers.nullValue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 @ExtendWith(VertxExtension.class)
 @SuppressWarnings("checkstyle:ClassFanOutComplexity")
@@ -89,6 +93,7 @@ public class KafkaAssemblyOperatorMockTest {
     private static KubernetesClient client;
     private static MockKube3 mockKube;
 
+    private LicenseExpirationWatcher licenseExpirationWatcher;
     private String namespace;
     private Storage kafkaStorage;
     private ResourceOperatorSupplier supplier;
@@ -133,6 +138,9 @@ public class KafkaAssemblyOperatorMockTest {
 
     @BeforeEach
     public void beforeEach(TestInfo testInfo) {
+        licenseExpirationWatcher = mock(LicenseExpirationWatcher.class);
+        when(licenseExpirationWatcher.isLicenseActive()).thenReturn(true);
+
         namespace = testInfo.getTestMethod().orElseThrow().getName().toLowerCase(Locale.ROOT);
         mockKube.prepareNamespace(namespace);
 
@@ -179,7 +187,7 @@ public class KafkaAssemblyOperatorMockTest {
 
         ClusterOperatorConfig config = ResourceUtils.dummyClusterOperatorConfig(VERSIONS);
         operator = new KafkaAssemblyOperator(vertx, pfa, new MockCertManager(),
-                new PasswordGenerator(10, "a", "a"), supplier, config);
+                new PasswordGenerator(10, "a", "a"), supplier, config, licenseExpirationWatcher);
     }
 
     @AfterEach
@@ -228,6 +236,18 @@ public class KafkaAssemblyOperatorMockTest {
                 assertThat(client.secrets().inNamespace(namespace).withName(KafkaResources.kafkaSecretName(CLUSTER_NAME)).get(), is(notNullValue()));
                 assertThat(client.secrets().inNamespace(namespace).withName(KafkaResources.zookeeperSecretName(CLUSTER_NAME)).get(), is(notNullValue()));
             })));
+    }
+
+    @Test
+    public void testInactiveLicense(VertxTestContext context) {
+        when(licenseExpirationWatcher.isLicenseActive()).thenReturn(false);
+
+        var async = context.checkpoint();
+        operator.reconcile(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, namespace, CLUSTER_NAME))
+                .onComplete(context.failing(e -> context.verify(() -> {
+                    assertEquals(AbstractOperator.INVALID_LICENSE_MSG, e.getMessage());
+                    async.flag();
+                })));
     }
 
     /** Create a cluster from a Kafka */

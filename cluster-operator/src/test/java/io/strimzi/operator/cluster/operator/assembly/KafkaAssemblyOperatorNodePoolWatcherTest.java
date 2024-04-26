@@ -4,6 +4,7 @@
  */
 package io.strimzi.operator.cluster.operator.assembly;
 
+import com.cloudera.operator.cluster.LicenseExpirationWatcher;
 import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.fabric8.kubernetes.api.model.LabelSelectorBuilder;
 import io.fabric8.kubernetes.api.model.Quantity;
@@ -26,6 +27,7 @@ import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.operator.resource.CrdOperator;
 import io.vertx.core.Vertx;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
@@ -35,6 +37,7 @@ import java.util.Map;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 public class KafkaAssemblyOperatorNodePoolWatcherTest {
@@ -80,6 +83,12 @@ public class KafkaAssemblyOperatorNodePoolWatcherTest {
                 .withResources(new ResourceRequirementsBuilder().withRequests(Map.of("cpu", new Quantity("4"))).build())
             .endSpec()
             .build();
+    private static final LicenseExpirationWatcher LEW = mock(LicenseExpirationWatcher.class);
+
+    @BeforeAll
+    public static void beforeAll() {
+        when(LEW.isLicenseActive()).thenReturn(true);
+    }
 
     @Test
     public void testEnqueueingResource()    {
@@ -195,7 +204,7 @@ public class KafkaAssemblyOperatorNodePoolWatcherTest {
         public List<Reconciliation> reconciliations = new ArrayList<>();
 
         public MockKafkaAssemblyOperator(LabelSelector selector, ResourceOperatorSupplier supplier) {
-            super(Vertx.vertx(), null, null, null, supplier, ResourceUtils.dummyClusterOperatorConfig());
+            super(Vertx.vertx(), null, null, null, supplier, ResourceUtils.dummyClusterOperatorConfig(), LEW);
             this.selector = selector;
         }
 

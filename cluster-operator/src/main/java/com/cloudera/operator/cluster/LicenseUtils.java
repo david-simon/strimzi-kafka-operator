@@ -176,21 +176,30 @@ public class LicenseUtils {
             return LicenseState.DATE_MISSING;
         }
 
+        var deactivationDate = license.getDeactivationDate();
+        if (deactivationDate == null) {
+            deactivationDate = expirationDate;
+        }
+
+        if (startDate.isAfter(expirationDate) || startDate.isAfter(deactivationDate)) {
+            return LicenseState.START_DATE_INVALID;
+        }
+
         var now = currentDateSupplier.get();
         if (now.isBefore(startDate)) {
-            return LicenseState.INACTIVE;
+            return LicenseState.NOT_STARTED;
         }
 
         if (now.isBefore(expirationDate.plusDays(1))) {
             return LicenseState.ACTIVE;
         }
 
-        var gracePeriodEndDate = getGracePeriodEndDate(license);
+        var gracePeriodEndDate = getGracePeriodEndDate(expirationDate, deactivationDate);
         if (now.isBefore(gracePeriodEndDate.plusDays(1))) {
             return LicenseState.GRACE_PERIOD;
         }
 
-        return LicenseState.INACTIVE;
+        return LicenseState.EXPIRED;
     }
 
     /**
@@ -216,14 +225,8 @@ public class LicenseUtils {
         }
     }
 
-    private LocalDate getGracePeriodEndDate(License license) {
-        var gracePeriodEndDateCandidate = license.getExpirationDate().plusMonths(DEFAULT_GRACE_PERIOD_MONTH);
-        var deactivationDate = license.getDeactivationDate();
-
-        if (deactivationDate == null) {
-            return gracePeriodEndDateCandidate;
-        }
-
+    private LocalDate getGracePeriodEndDate(LocalDate expirationDate, LocalDate deactivationDate) {
+        var gracePeriodEndDateCandidate = expirationDate.plusMonths(DEFAULT_GRACE_PERIOD_MONTH);
         return Collections.max(List.of(gracePeriodEndDateCandidate, deactivationDate));
     }
 

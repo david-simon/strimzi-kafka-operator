@@ -52,17 +52,20 @@ public class LicenseExpirationWatcher {
      * The key of the annotations in license related events
      */
     public static final String LICENSE_ANNOTATION_KEY = "csm/license-state";
+
     private static final Logger LOGGER = LogManager.getLogger(LicenseExpirationWatcher.class);
     private static final DateTimeFormatter K8S_MICROTIME = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss'.'SSSSSSXXX");
     private static final String CONTROLLER = "strimzi.io/cluster-operator";
     private static final String LICENSE_SECRET_KEY = "license";
     private static final String EVENT_ACTION = "LicenseCheck";
     private static final String EVENT_TYPE = "Warning";
+
     private final KubernetesClient client;
     private final String namespace;
     private final String secretName;
     private final ScheduledExecutorService execSvc;
     private final LicenseUtils licenseUtils;
+
     private ScheduledFuture<?> licenseWatcherTask;
     private volatile boolean licenseActive;
 
@@ -113,8 +116,8 @@ public class LicenseExpirationWatcher {
             var data = getLicenseSecretData(isRetryAllowed);
             if (data.isEmpty()) {
                 licenseActive = false;
-                LOGGER.error("No license found. Please provide a valid license in the license secret.");
-                publishEvent(LicenseState.MISSING, "No license found.", "Please provide a valid license in the license secret.");
+                LOGGER.error("No license found. Please provide a valid license.");
+                publishEvent(LicenseState.MISSING, "No license found.", "Please provide a valid license.");
                 return;
             }
 
@@ -126,8 +129,8 @@ public class LicenseExpirationWatcher {
                 createEventAndLogAboutLicenseState(licenseState);
             } catch (Exception e) {
                 licenseActive = false;
-                LOGGER.error("License verification failed. Please provide a valid license in the license secret.", e);
-                publishEvent(LicenseState.MISSING, "License verification failed.", "Please provide a valid license in the license secret.");
+                LOGGER.error("License verification failed. Please provide a valid license.", e);
+                publishEvent(LicenseState.INVALID, "License verification failed.", "Please provide a valid license.");
             }
         } catch (InterruptedException ignored) {
             licenseActive = false;
@@ -169,8 +172,8 @@ public class LicenseExpirationWatcher {
     }
 
     private Optional<byte[]> getLicenseSecretData(boolean isRetryAllowed) throws InterruptedException {
-        var count = isRetryAllowed ? 1 : 3;
-        for (int i = 0; i < count; i++) {
+        var retryCount = isRetryAllowed ? 3 : 1;
+        for (int i = 0; i < retryCount; i++) {
             if (i > 0) {
                 Thread.sleep(3000);
             }
@@ -204,37 +207,49 @@ public class LicenseExpirationWatcher {
 
     private void createEventAndLogAboutLicenseState(LicenseState state) {
         switch (state) {
-            case ACTIVE -> { }
+            case ACTIVE -> LOGGER.info("License is active.");
             case GRACE_PERIOD -> {
-                LOGGER.warn("License is in the grace period. Please provide a newer license in the license secret.");
-                publishEvent(state, "License is in grace period.", "Please provide a newer License in the License secret.");
+                LOGGER.warn("License is in the grace period. Please provide a newer license.");
+                publishEvent(state, "License is in grace period.", "Please provide a newer license.");
             }
             case MISSING -> {
-                LOGGER.error("License is missing. Please provide a valid License in the License secret.");
-                publishEvent(state, "No License found.", "Please provide a valid License in the License secret.");
+                LOGGER.error("License is missing. Please provide a valid license.");
+                publishEvent(state, "No License found.", "Please provide a valid license.");
             }
             case FEATURE_MISSING -> {
                 LOGGER.error(
-                        "License has no streaming feature ({}). Please provide a License with streaming feature.",
+                        "License has no streaming feature ({}). Please provide a license with streaming feature.",
                         LicenseUtils.STREAMING_FEATURE
                 );
                 publishEvent(
                         state,
                         "License has no streaming feature (%s).".formatted(LicenseUtils.STREAMING_FEATURE),
-                        "Please provide a License with streaming feature."
+                        "Please provide a license with streaming feature."
                 );
             }
-            case DATE_MISSING -> {
-                LOGGER.error("License has no start/expiration date. Please provide a valid License with proper dates.");
-                publishEvent(state, "License has no start/expiration date.", "Please provide a valid License with proper dates.");
+            case NOT_STARTED -> {
+                LOGGER.error("License activity period not started yet. Please provide a valid license.");
+                publishEvent(state, "No License found.", "Please provide a valid license.");
             }
-            case INACTIVE -> {
-                LOGGER.error("License is inactive. Please provide a valid License in the License secret.");
-                publishEvent(state, "License is inactive.", "Please provide a valid License in the License secret.");
+            case DATE_MISSING -> {
+                LOGGER.error("License has at least one missing date field. Please provide a valid license with proper dates.");
+                publishEvent(state, "License has at least one missing date field.", "Please provide a valid license with proper dates.");
+            }
+            case START_DATE_INVALID -> {
+                LOGGER.error("License start date is after deactivation/expiration date. Please provide a valid license with proper dates.");
+                publishEvent(state, "License start date is after deactivation/expiration date.", "Please provide a valid license with proper dates.");
+            }
+            case EXPIRED -> {
+                LOGGER.error("License is expired. Please provide a valid license.");
+                publishEvent(state, "License is expired.", "Please provide a valid license.");
+            }
+            case INVALID -> {
+                LOGGER.error("License is inactive. Please provide a valid license.");
+                publishEvent(state, "License is inactive.", "Please provide a valid license.");
             }
             default -> {
                 LOGGER.error("License handling failed. It is considered as inactive. License state: {}", state);
-                publishEvent(state, "License handling failed.", "Please provide a valid License in the License secret.");
+                publishEvent(state, "License handling failed.", "It is considered as inactive. Please provide a valid license.");
             }
         }
     }

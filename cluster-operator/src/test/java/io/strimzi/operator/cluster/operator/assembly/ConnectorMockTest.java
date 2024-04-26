@@ -4,6 +4,7 @@
  */
 package io.strimzi.operator.cluster.operator.assembly;
 
+import com.cloudera.operator.cluster.LicenseExpirationWatcher;
 import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.fabric8.kubernetes.api.model.StatusDetails;
 import io.fabric8.kubernetes.client.CustomResource;
@@ -100,6 +101,7 @@ import static org.mockito.Mockito.when;
 @SuppressWarnings({"checkstyle:ClassFanOutComplexity"})
 public class ConnectorMockTest {
     private static final Logger LOGGER = LogManager.getLogger(ConnectorMockTest.class.getName());
+    private static final LicenseExpirationWatcher LEW = mock(LicenseExpirationWatcher.class);
 
     private static KubernetesClient client;
     private static MockKube3 mockKube;
@@ -150,6 +152,7 @@ public class ConnectorMockTest {
                 .build();
         mockKube.start();
         client = mockKube.client();
+        when(LEW.isLicenseActive()).thenReturn(true);
     }
 
     @AfterAll
@@ -193,7 +196,8 @@ public class ConnectorMockTest {
             pfa,
             ros,
             config,
-            x -> api));
+            x -> api,
+            LEW));
 
         Checkpoint async = testContext.checkpoint();
         // Fail test if watcher closes for any reason

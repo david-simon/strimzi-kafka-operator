@@ -4,6 +4,7 @@
  */
 package io.strimzi.operator.cluster.operator.assembly;
 
+import com.cloudera.operator.cluster.LicenseExpirationWatcher;
 import io.fabric8.kubernetes.api.model.KubernetesResourceList;
 import io.fabric8.kubernetes.api.model.LocalObjectReference;
 import io.fabric8.kubernetes.client.CustomResource;
@@ -65,14 +66,16 @@ public abstract class AbstractAssemblyOperator<C extends KubernetesClient, T ext
      * @param passwordGenerator Password generator
      * @param resourceOperator For operating on the desired resource
      * @param supplier Supplies the operators for different resources
-     * @param config ClusterOperator configuration. Used to get the user-configured image pull policy and the secrets.
+     * @param config ClusterOperator configuration. Used to get the user-configured image pull policy and the secrets
+     * @param licenseExpirationWatcher Cloudera license expiration watcher.
      */
     protected AbstractAssemblyOperator(Vertx vertx, PlatformFeaturesAvailability pfa, String kind,
                                        CertManager certManager, PasswordGenerator passwordGenerator,
                                        AbstractWatchableStatusedNamespacedResourceOperator<C, T, L, R> resourceOperator,
                                        ResourceOperatorSupplier supplier,
-                                       ClusterOperatorConfig config) {
-        super(vertx, kind, resourceOperator, supplier.metricsProvider, config.getCustomResourceSelector());
+                                       ClusterOperatorConfig config,
+                                       LicenseExpirationWatcher licenseExpirationWatcher) {
+        super(vertx, kind, resourceOperator, supplier.metricsProvider, config.getCustomResourceSelector(), licenseExpirationWatcher);
         this.pfa = pfa;
         this.certManager = certManager;
         this.passwordGenerator = passwordGenerator;

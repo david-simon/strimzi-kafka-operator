@@ -25,18 +25,35 @@ import com.cloudera.operator.cluster.model.LicenseState;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 
+import java.util.stream.Stream;
+
+import static org.junit.jupiter.params.provider.Arguments.arguments;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 public class LicenseExpirationWatcherTest extends LicenseExpirationWatcherTestBase {
+    private static Stream<Arguments> provideLicenseState() {
+        return Stream.of(
+                arguments("License is inactive", LicenseState.INVALID),
+                arguments("License dates are missing", LicenseState.DATE_MISSING),
+                arguments("License date is invalid", LicenseState.START_DATE_INVALID),
+                arguments("License feature is missing", LicenseState.FEATURE_MISSING),
+                arguments("License is not started", LicenseState.NOT_STARTED),
+                arguments("License is expired", LicenseState.EXPIRED)
+        );
+    }
+
     @Test
     public void testLicenseExpirationWatcherWhenNoSecretProvided() {
         when(secretsInNamespace.withName(LicenseConfig.DEFAULT_LICENSE_SECRET_NAME)).thenReturn(null);
 
-        getLicenseExpirationWatcher().doLicenseExpirationWatching();
+        getLicenseExpirationWatcher().doLicenseExpirationWatching(false);
 
         assertLicenseNotFound();
     }
@@ -48,7 +65,7 @@ public class LicenseExpirationWatcherTest extends LicenseExpirationWatcherTestBa
         when(secretsInNamespace.withName(LicenseConfig.DEFAULT_LICENSE_SECRET_NAME)).thenReturn(secretResource);
         when(secretResource.get()).thenThrow(new RuntimeException("test exception"));
 
-        getLicenseExpirationWatcher().doLicenseExpirationWatching();
+        getLicenseExpirationWatcher().doLicenseExpirationWatching(false);
 
         assertLicenseNotFound();
     }
@@ -61,7 +78,7 @@ public class LicenseExpirationWatcherTest extends LicenseExpirationWatcherTestBa
         when(secretResource.get()).thenReturn(secret);
         when(secret.getData()).thenReturn(null);
 
-        getLicenseExpirationWatcher().doLicenseExpirationWatching();
+        getLicenseExpirationWatcher().doLicenseExpirationWatching(false);
 
         assertLicenseNotFound();
     }
@@ -70,7 +87,7 @@ public class LicenseExpirationWatcherTest extends LicenseExpirationWatcherTestBa
     public void testLicenseExpirationWatcherWhenNoLicenseProvidedInLicenseSecret() {
         mockLicenseIntoSecret("");
 
-        getLicenseExpirationWatcher().doLicenseExpirationWatching();
+        getLicenseExpirationWatcher().doLicenseExpirationWatching(false);
 
         assertLicenseNotFound();
     }
@@ -80,53 +97,20 @@ public class LicenseExpirationWatcherTest extends LicenseExpirationWatcherTestBa
         mockLicenseIntoSecret("license");
         setLicenseUtilsMockReturnState(new License(), LicenseState.ACTIVE);
 
-        getLicenseExpirationWatcher().doLicenseExpirationWatching();
+        getLicenseExpirationWatcher().doLicenseExpirationWatching(false);
 
         assertLicenseActive(false);
         verify(eventResource, never()).create();
     }
 
     @Test
-    public void testLicenseExpirationWatcherWhenValidLicenseProvidedButLicenseMessageIsNull() {
+    public void testLicenseExpirationWatcherWhenValidLicenseProvidedButLicenseIsNull() {
         mockLicenseIntoSecret("license");
         setLicenseUtilsMockReturnState(null, LicenseState.MISSING);
 
-        getLicenseExpirationWatcher().doLicenseExpirationWatching();
+        getLicenseExpirationWatcher().doLicenseExpirationWatching(false);
 
         assertLicenseNotFound();
-    }
-
-    @Test
-    public void testLicenseExpirationWatcherWhenValidLicenseProvidedButLicenseMessageHasNoFeatures() {
-        mockLicenseIntoSecret("license");
-        setLicenseUtilsMockReturnState(new License(), LicenseState.FEATURE_MISSING);
-
-        getLicenseExpirationWatcher().doLicenseExpirationWatching();
-
-        assertLicenseNotActiveAndEventCreated();
-        assertLicenseState(LicenseState.FEATURE_MISSING);
-    }
-
-    @Test
-    public void testLicenseExpirationWatcherWhenValidLicenseProvidedButLicenseMessageHasNoDates() {
-        mockLicenseIntoSecret("license");
-        setLicenseUtilsMockReturnState(new License(), LicenseState.DATE_MISSING);
-
-        getLicenseExpirationWatcher().doLicenseExpirationWatching();
-
-        assertLicenseNotActiveAndEventCreated();
-        assertLicenseState(LicenseState.DATE_MISSING);
-    }
-
-    @Test
-    public void testLicenseExpirationWatcherWhenValidLicenseProvidedButLicenseStartDateNotReached() {
-        mockLicenseIntoSecret("license");
-        setLicenseUtilsMockReturnState(new License(), LicenseState.INACTIVE);
-
-        getLicenseExpirationWatcher().doLicenseExpirationWatching();
-
-        assertLicenseNotActiveAndEventCreated();
-        assertLicenseState(LicenseState.INACTIVE);
     }
 
     @Test
@@ -134,21 +118,22 @@ public class LicenseExpirationWatcherTest extends LicenseExpirationWatcherTestBa
         mockLicenseIntoSecret("license");
         setLicenseUtilsMockReturnState(new License(), LicenseState.GRACE_PERIOD);
 
-        getLicenseExpirationWatcher().doLicenseExpirationWatching();
+        getLicenseExpirationWatcher().doLicenseExpirationWatching(false);
 
         assertLicenseActive(true);
         verify(eventResource).create();
         assertLicenseState(LicenseState.GRACE_PERIOD);
     }
 
-    @Test
-    public void testLicenseExpirationWatcherWhenValidLicenseProvidedAndLicenseHasExpired() {
+    @ParameterizedTest(name = "{0}")
+    @MethodSource("provideLicenseState")
+    public void testLicenseExpirationWatcherWithLicenseState(String displayName, LicenseState state) {
         mockLicenseIntoSecret("license");
-        setLicenseUtilsMockReturnState(new License(), LicenseState.INACTIVE);
+        setLicenseUtilsMockReturnState(new License(), state);
 
-        getLicenseExpirationWatcher().doLicenseExpirationWatching();
+        getLicenseExpirationWatcher().doLicenseExpirationWatching(false);
 
         assertLicenseNotActiveAndEventCreated();
-        assertLicenseState(LicenseState.INACTIVE);
+        assertLicenseState(state);
     }
 }

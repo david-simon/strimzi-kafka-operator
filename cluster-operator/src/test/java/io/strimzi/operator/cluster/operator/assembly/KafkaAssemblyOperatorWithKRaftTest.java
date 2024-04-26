@@ -4,6 +4,7 @@
  */
 package io.strimzi.operator.cluster.operator.assembly;
 
+import com.cloudera.operator.cluster.LicenseExpirationWatcher;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.Quantity;
 import io.fabric8.kubernetes.api.model.ResourceRequirementsBuilder;
@@ -90,6 +91,7 @@ import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.startsWith;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 /**
@@ -211,6 +213,7 @@ public class KafkaAssemblyOperatorWithKRaftTest {
             true,
             null
     );
+    private static final LicenseExpirationWatcher LEW = mock(LicenseExpirationWatcher.class);
 
     protected static Vertx vertx;
     private static WorkerExecutor sharedWorkerExecutor;
@@ -219,6 +222,7 @@ public class KafkaAssemblyOperatorWithKRaftTest {
     public static void beforeAll() {
         vertx = Vertx.vertx();
         sharedWorkerExecutor = vertx.createSharedWorkerExecutor("kubernetes-ops-pool");
+        when(LEW.isLicenseActive()).thenReturn(true);
     }
 
     @AfterAll
@@ -1074,7 +1078,8 @@ public class KafkaAssemblyOperatorWithKRaftTest {
                 CERT_MANAGER,
                 PASSWORD_GENERATOR,
                 supplier,
-                config);
+                config,
+                LEW);
 
         Checkpoint async = context.checkpoint();
         kao.reconcile(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME))
@@ -1122,7 +1127,8 @@ public class KafkaAssemblyOperatorWithKRaftTest {
                 CERT_MANAGER,
                 PASSWORD_GENERATOR,
                 supplier,
-                config);
+                config,
+                LEW);
 
         Checkpoint async = context.checkpoint();
 
@@ -1144,7 +1150,7 @@ public class KafkaAssemblyOperatorWithKRaftTest {
         ReconciliationState state;
 
         public MockKafkaAssemblyOperator(Vertx vertx, PlatformFeaturesAvailability pfa, CertManager certManager, PasswordGenerator passwordGenerator, ResourceOperatorSupplier supplier, ClusterOperatorConfig config, KafkaReconciler mockKafkaReconciler) {
-            super(vertx, pfa, certManager, passwordGenerator, supplier, config);
+            super(vertx, pfa, certManager, passwordGenerator, supplier, config, LEW);
             this.mockKafkaReconciler = mockKafkaReconciler;
         }
 

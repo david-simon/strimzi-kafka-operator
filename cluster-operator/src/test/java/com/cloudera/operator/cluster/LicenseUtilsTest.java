@@ -68,17 +68,20 @@ public class LicenseUtilsTest {
                 arguments("Dates are not provided", null, null, null, LicenseState.DATE_MISSING),
                 arguments("Start date is missing", null, NOW, NOW, LicenseState.DATE_MISSING),
                 arguments("Expiration date is missing", NOW, null, NOW, LicenseState.DATE_MISSING),
+                arguments("Deactivation date is missing", NOW, NOW, null, LicenseState.ACTIVE),
                 arguments("Every dates selected as now", NOW, NOW, NOW, LicenseState.ACTIVE),
-                arguments("Start and expiration dates selected as now, deactivation date is missing", NOW, NOW, null, LicenseState.ACTIVE),
                 arguments("Start date is in the past", NOW.minusDays(1), NOW, NOW, LicenseState.ACTIVE),
-                arguments("Start date is in the future", NOW.plusDays(1), NOW, NOW, LicenseState.INACTIVE),
-                arguments("Expired due to expiration date", NOW, NOW.minusMonths(2), null, LicenseState.INACTIVE),
-                arguments("Expired due to deactivation date", NOW, NOW.minusMonths(2), NOW.minusDays(1), LicenseState.INACTIVE),
-                arguments("Expired due to expiration and deactivation dates", NOW, NOW.minusMonths(2), NOW.minusMonths(2), LicenseState.INACTIVE),
-                arguments("Grace period due to expiration date", NOW, NOW.minusDays(1), null, LicenseState.GRACE_PERIOD),
-                arguments("Grace period due to expiration date, when grace period end equals to now", NOW, NOW.minusMonths(1), null, LicenseState.GRACE_PERIOD),
-                arguments("Grace period due to deactivation date", NOW, NOW.minusMonths(3), NOW.plusDays(1), LicenseState.GRACE_PERIOD),
-                arguments("Grace period due to deactivation date, when grace period end equals to now", NOW, NOW.minusMonths(3), NOW, LicenseState.GRACE_PERIOD)
+                arguments("Start date is in the future", NOW.plusDays(1), NOW, NOW, LicenseState.START_DATE_INVALID),
+                arguments("Inactive due to start date is after expiration date", NOW, NOW.minusMonths(1), NOW, LicenseState.START_DATE_INVALID),
+                arguments("Inactive due to start date is after deactivation date", NOW, NOW, NOW.minusMonths(1), LicenseState.START_DATE_INVALID),
+                arguments("Inactive due to start date is after expiration and deactivation date", NOW, NOW.minusMonths(1), NOW.minusMonths(1), LicenseState.START_DATE_INVALID),
+                arguments("Expired due to expiration date", NOW.minusMonths(2), NOW.minusMonths(2), NOW.minusMonths(2), LicenseState.EXPIRED),
+                arguments("Expired due to deactivation date", NOW.minusMonths(2), NOW.minusMonths(2), NOW.minusDays(1), LicenseState.EXPIRED),
+                arguments("Expired due to expiration and deactivation dates", NOW.minusMonths(2), NOW.minusMonths(2), NOW.minusMonths(1), LicenseState.EXPIRED),
+                arguments("Grace period due to expiration date", NOW.minusMonths(2), NOW.minusDays(1), NOW, LicenseState.GRACE_PERIOD),
+                arguments("Grace period due to expiration date, when grace period end equals to now", NOW.minusMonths(2), NOW.minusMonths(1), NOW.minusMonths(1), LicenseState.GRACE_PERIOD),
+                arguments("Grace period due to deactivation date", NOW.minusMonths(2), NOW.minusMonths(2), NOW.plusDays(1), LicenseState.GRACE_PERIOD),
+                arguments("Grace period due to deactivation date, when grace period end equals to now", NOW.minusMonths(2), NOW.minusMonths(2), NOW, LicenseState.GRACE_PERIOD)
         );
     }
 

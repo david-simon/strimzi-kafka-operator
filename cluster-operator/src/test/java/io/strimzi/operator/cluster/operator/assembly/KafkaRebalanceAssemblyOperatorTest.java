@@ -4,6 +4,7 @@
  */
 package io.strimzi.operator.cluster.operator.assembly;
 
+import com.cloudera.operator.cluster.LicenseExpirationWatcher;
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.client.KubernetesClient;
@@ -70,10 +71,12 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
@@ -110,6 +113,7 @@ public class KafkaRebalanceAssemblyOperatorTest {
     private SecretOperator mockSecretOps;
     private KafkaRebalanceAssemblyOperator kcrao;
     private ConfigMapOperator mockCmOps;
+    private LicenseExpirationWatcher licenseExpirationWatcher;
 
     @BeforeAll
     public static void beforeAll() {
@@ -131,6 +135,9 @@ public class KafkaRebalanceAssemblyOperatorTest {
 
     @BeforeEach
     public void beforeEach(TestInfo testInfo, Vertx vertx) {
+        licenseExpirationWatcher = mock(LicenseExpirationWatcher.class);
+        when(licenseExpirationWatcher.isLicenseActive()).thenReturn(true);
+
         namespace = testInfo.getTestMethod().orElseThrow().getName().toLowerCase(Locale.ROOT);
         mockKube.prepareNamespace(namespace);
 
@@ -139,7 +146,7 @@ public class KafkaRebalanceAssemblyOperatorTest {
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
 
         // Override to inject mocked cruise control address so real cruise control not required
-        kcrao = new KafkaRebalanceAssemblyOperator(vertx, supplier, ResourceUtils.dummyClusterOperatorConfig()) {
+        kcrao = new KafkaRebalanceAssemblyOperator(vertx, supplier, ResourceUtils.dummyClusterOperatorConfig(), licenseExpirationWatcher) {
             @Override
             public String cruiseControlHost(String clusterName, String clusterNamespace) {
                 return HOST;
@@ -192,6 +199,22 @@ public class KafkaRebalanceAssemblyOperatorTest {
                 .thenReturn(Future.succeededFuture(MockCruiseControl.CC_SECRET));
         when(mockSecretOps.getAsync(namespace, CruiseControlResources.apiSecretName(CLUSTER_NAME)))
                 .thenReturn(Future.succeededFuture(MockCruiseControl.CC_API_SECRET));
+    }
+
+    @Test
+    public void testInactiveLicense(VertxTestContext context) throws IOException, URISyntaxException {
+        var kr = createKafkaRebalance(namespace, CLUSTER_NAME, RESOURCE_NAME, new KafkaRebalanceSpecBuilder().build(), false);
+        ccServer.setupCCRebalanceResponse(0, CruiseControlEndpoints.REBALANCE);
+        when(licenseExpirationWatcher.isLicenseActive()).thenReturn(false);
+
+        var async = context.checkpoint();
+        kcrao.reconcile(new Reconciliation("test-trigger", KafkaRebalance.RESOURCE_KIND, namespace, kr.getMetadata().getName()))
+                .onComplete(context.failing(e -> context.verify(() -> assertEquals(AbstractOperator.INVALID_LICENSE_MSG, e.getMessage()))));
+        kcrao.reconcileRebalance(new Reconciliation("test-trigger", KafkaRebalance.RESOURCE_KIND, namespace, kr.getMetadata().getName()), kr)
+                .onComplete(context.failing(e -> context.verify(() -> {
+                    assertEquals(AbstractOperator.INVALID_LICENSE_MSG, e.getMessage());
+                    async.flag();
+                })));
     }
 
     /**
@@ -1420,7 +1443,7 @@ public class KafkaRebalanceAssemblyOperatorTest {
                 .with(ClusterOperatorConfig.OPERATION_TIMEOUT_MS.key(), "120000")
                 .with(ClusterOperatorConfig.CUSTOM_RESOURCE_SELECTOR.key(), Map.of("selectorLabel", "value").entrySet().stream().map(e -> e.getKey() + "=" + e.getValue()).collect(Collectors.joining(","))).build();
 
-        kcrao = new KafkaRebalanceAssemblyOperator(Vertx.vertx(), supplier, config);
+        kcrao = new KafkaRebalanceAssemblyOperator(Vertx.vertx(), supplier, config, licenseExpirationWatcher);
 
         Checkpoint checkpoint = context.checkpoint();
         kcrao.reconcileRebalance(

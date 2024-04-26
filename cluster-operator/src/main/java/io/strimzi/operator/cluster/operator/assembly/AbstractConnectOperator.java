@@ -4,6 +4,7 @@
  */
 package io.strimzi.operator.cluster.operator.assembly;
 
+import com.cloudera.operator.cluster.LicenseExpirationWatcher;
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.DefaultKubernetesResourceList;
 import io.fabric8.kubernetes.api.model.HasMetadata;
@@ -130,13 +131,15 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
      * @param config                    Cluster operator configuration
      * @param connectClientProvider     Provider of the Kafka Connect REST API client
      * @param port                      Port number on which the Connect REST API is listening
+     * @param licenseExpirationWatcher  Cloudera license expiration watcher
      */
     public AbstractConnectOperator(Vertx vertx, PlatformFeaturesAvailability pfa, String kind,
                                    CrdOperator<C, T, L> resourceOperator,
                                    ResourceOperatorSupplier supplier, ClusterOperatorConfig config,
                                    Function<Vertx, KafkaConnectApi> connectClientProvider,
-                                   int port) {
-        super(vertx, kind, resourceOperator, new ConnectOperatorMetricsHolder(kind, config.getCustomResourceSelector(), supplier.metricsProvider), config.getCustomResourceSelector());
+                                   int port, LicenseExpirationWatcher licenseExpirationWatcher) {
+        super(vertx, kind, resourceOperator, new ConnectOperatorMetricsHolder(kind, config.getCustomResourceSelector(), supplier.metricsProvider),
+                config.getCustomResourceSelector(), licenseExpirationWatcher);
 
         this.isNetworkPolicyGeneration = config.isNetworkPolicyGeneration();
         this.deploymentOperations = supplier.deploymentOperations;

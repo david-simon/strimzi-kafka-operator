@@ -160,6 +160,15 @@ public class Main {
         // Initialize the PodSecurityProvider factory to provide the user configured provider
         PodSecurityProviderFactory.initialize(config.getPodSecurityProviderClass(), pfa);
 
+        if (licenseExpirationWatcher == null) {
+            try {
+                licenseExpirationWatcher = startLicenseExpirationWatcher(client, config, shutdownHook);
+            } catch (Exception e) {
+                LOGGER.error("Unable to start operator license checking", e);
+                System.exit(1);
+            }
+        }
+
         KafkaAssemblyOperator kafkaClusterOperations = null;
         KafkaConnectAssemblyOperator kafkaConnectClusterOperations = null;
         KafkaMirrorMaker2AssemblyOperator kafkaMirrorMaker2AssemblyOperator = null;
@@ -176,21 +185,12 @@ public class Main {
                             "ABCDEFGHIJKLMNOPQRSTUVWXYZ" +
                             "0123456789");
 
-            kafkaClusterOperations = new KafkaAssemblyOperator(vertx, pfa, certManager, passwordGenerator, resourceOperatorSupplier, config);
-            kafkaConnectClusterOperations = new KafkaConnectAssemblyOperator(vertx, pfa, resourceOperatorSupplier, config);
-            kafkaMirrorMaker2AssemblyOperator = new KafkaMirrorMaker2AssemblyOperator(vertx, pfa, resourceOperatorSupplier, config);
-            kafkaMirrorMakerAssemblyOperator = new KafkaMirrorMakerAssemblyOperator(vertx, pfa, certManager, passwordGenerator, resourceOperatorSupplier, config);
-            kafkaBridgeAssemblyOperator = new KafkaBridgeAssemblyOperator(vertx, pfa, certManager, passwordGenerator, resourceOperatorSupplier, config);
-            kafkaRebalanceAssemblyOperator = new KafkaRebalanceAssemblyOperator(vertx, resourceOperatorSupplier, config);
-        }
-
-        if (licenseExpirationWatcher == null) {
-            try {
-                licenseExpirationWatcher = startLicenseExpirationWatcher(client, config, shutdownHook);
-            } catch (Exception e) {
-                LOGGER.error("Unable to start operator license checking", e);
-                System.exit(1);
-            }
+            kafkaClusterOperations = new KafkaAssemblyOperator(vertx, pfa, certManager, passwordGenerator, resourceOperatorSupplier, config, licenseExpirationWatcher);
+            kafkaConnectClusterOperations = new KafkaConnectAssemblyOperator(vertx, pfa, resourceOperatorSupplier, config, licenseExpirationWatcher);
+            kafkaMirrorMaker2AssemblyOperator = new KafkaMirrorMaker2AssemblyOperator(vertx, pfa, resourceOperatorSupplier, config, licenseExpirationWatcher);
+            kafkaMirrorMakerAssemblyOperator = new KafkaMirrorMakerAssemblyOperator(vertx, pfa, certManager, passwordGenerator, resourceOperatorSupplier, config, licenseExpirationWatcher);
+            kafkaBridgeAssemblyOperator = new KafkaBridgeAssemblyOperator(vertx, pfa, certManager, passwordGenerator, resourceOperatorSupplier, config, licenseExpirationWatcher);
+            kafkaRebalanceAssemblyOperator = new KafkaRebalanceAssemblyOperator(vertx, resourceOperatorSupplier, config, licenseExpirationWatcher);
         }
 
         List<Future<String>> futures = new ArrayList<>(config.getNamespaces().size());
@@ -205,8 +205,7 @@ public class Main {
                     kafkaMirrorMaker2AssemblyOperator,
                     kafkaBridgeAssemblyOperator,
                     kafkaRebalanceAssemblyOperator,
-                    resourceOperatorSupplier,
-                    licenseExpirationWatcher);
+                    resourceOperatorSupplier);
             vertx.deployVerticle(operator,
                 res -> {
                     if (res.succeeded()) {

@@ -4,6 +4,7 @@
  */
 package io.strimzi.operator.cluster.operator.assembly;
 
+import com.cloudera.operator.cluster.LicenseExpirationWatcher;
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
 import io.fabric8.kubernetes.api.model.LabelSelector;
@@ -98,6 +99,7 @@ import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -126,6 +128,7 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasKey;
 import static org.hamcrest.Matchers.hasSize;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyLong;
@@ -133,6 +136,7 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(VertxExtension.class)
@@ -170,6 +174,7 @@ public class KafkaAssemblyOperatorTest {
     private static EntityOperatorSpec eoConfig;
     private final MockCertManager certManager = new MockCertManager();
     private final PasswordGenerator passwordGenerator = new PasswordGenerator(10, "a", "a");
+    private LicenseExpirationWatcher licenseExpirationWatcher;
 
     public static class Params {
         private final boolean openShift;
@@ -310,6 +315,12 @@ public class KafkaAssemblyOperatorTest {
         vertx.close();
         ResourceUtils.cleanUpTemporaryTLSFiles();
 
+    }
+
+    @BeforeEach
+    public void beforeEach() {
+        licenseExpirationWatcher = mock(LicenseExpirationWatcher.class);
+        when(licenseExpirationWatcher.isLicenseActive()).thenReturn(true);
     }
 
     @ParameterizedTest
@@ -655,7 +666,8 @@ public class KafkaAssemblyOperatorTest {
                 certManager,
                 passwordGenerator,
                 supplier,
-                config
+                config,
+                licenseExpirationWatcher
         );
 
         // Now try to create a KafkaCluster based on this CM
@@ -1211,11 +1223,15 @@ public class KafkaAssemblyOperatorTest {
         ArgumentCaptor<String> depCaptor = ArgumentCaptor.forClass(String.class);
         when(mockDepOps.reconcile(any(), anyString(), depCaptor.capture(), any())).thenReturn(Future.succeededFuture());
 
+        var licenseExpirationWatcher = mock(LicenseExpirationWatcher.class);
+        when(licenseExpirationWatcher.isLicenseActive()).thenReturn(true);
+
         KafkaAssemblyOperator ops = new KafkaAssemblyOperator(vertx, new PlatformFeaturesAvailability(openShift, kubernetesVersion),
                 certManager,
                 passwordGenerator,
                 supplier,
-                config
+                config,
+                licenseExpirationWatcher
         );
 
         // Mock broker scale down operation
@@ -1235,6 +1251,37 @@ public class KafkaAssemblyOperatorTest {
 
                 async.flag();
             })));
+    }
+
+    @ParameterizedTest
+    @MethodSource("data")
+    @Timeout(value = 2, timeUnit = TimeUnit.MINUTES)
+    public void testInactiveLicense(Params params, VertxTestContext context) {
+        setFields(params);
+        var supplier = ResourceUtils.supplierWithMocks(openShift);
+        var config = ResourceUtils.dummyClusterOperatorConfig(VERSIONS);
+        var mockKafkaOps = supplier.kafkaOperator;
+        var kafkaNamespace = "test";
+        var firstKafkaAssemblyClusterName = "foo";
+        var secondKafkaAssemblyClusterName = "bar";
+        var firstKafkaAssembly = getKafkaAssembly(firstKafkaAssemblyClusterName);
+        var secondKafkaAssembly = getKafkaAssembly(secondKafkaAssemblyClusterName);
+        when(mockKafkaOps.listAsync(eq(kafkaNamespace), isNull(LabelSelector.class))).thenReturn(Future.succeededFuture(asList(firstKafkaAssembly, secondKafkaAssembly)));
+        when(mockKafkaOps.get(eq(kafkaNamespace), eq(firstKafkaAssemblyClusterName))).thenReturn(firstKafkaAssembly);
+        when(mockKafkaOps.get(eq(kafkaNamespace), eq(secondKafkaAssemblyClusterName))).thenReturn(secondKafkaAssembly);
+        when(mockKafkaOps.getAsync(eq(kafkaNamespace), eq(firstKafkaAssemblyClusterName))).thenReturn(Future.succeededFuture(firstKafkaAssembly));
+        when(mockKafkaOps.getAsync(eq(kafkaNamespace), eq(secondKafkaAssemblyClusterName))).thenReturn(Future.succeededFuture(secondKafkaAssembly));
+        when(mockKafkaOps.updateStatusAsync(any(), any(Kafka.class))).thenReturn(Future.succeededFuture());
+        when(licenseExpirationWatcher.isLicenseActive()).thenReturn(false);
+
+        var ops = new KafkaAssemblyOperator(vertx, new PlatformFeaturesAvailability(openShift, kubernetesVersion),
+                certManager, passwordGenerator, supplier, config, licenseExpirationWatcher);
+
+        var async = context.checkpoint();
+        ops.reconcileAll("test", kafkaNamespace, context.failing(e -> context.verify(() -> {
+            assertEquals(AbstractOperator.INVALID_LICENSE_MSG, e.getMessage());
+            async.flag();
+        })));
     }
 
     @ParameterizedTest
@@ -1270,7 +1317,8 @@ public class KafkaAssemblyOperatorTest {
                 certManager,
                 passwordGenerator,
                 supplier,
-                config) {
+                config,
+                licenseExpirationWatcher) {
             @Override
             public Future<KafkaStatus> createOrUpdate(Reconciliation reconciliation, Kafka kafkaAssembly) {
                 String name = kafkaAssembly.getMetadata().getName();
@@ -1321,7 +1369,8 @@ public class KafkaAssemblyOperatorTest {
                 certManager,
                 passwordGenerator,
                 supplier,
-                config) {
+                config,
+                licenseExpirationWatcher) {
             @Override
             public Future<KafkaStatus> createOrUpdate(Reconciliation reconciliation, Kafka kafkaAssembly) {
                 String name = kafkaAssembly.getMetadata().getName();

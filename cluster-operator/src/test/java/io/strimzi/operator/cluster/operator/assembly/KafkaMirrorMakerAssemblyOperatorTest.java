@@ -4,6 +4,7 @@
  */
 package io.strimzi.operator.cluster.operator.assembly;
 
+import com.cloudera.operator.cluster.LicenseExpirationWatcher;
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
 import io.fabric8.kubernetes.api.model.LabelSelector;
@@ -49,6 +50,7 @@ import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
@@ -65,6 +67,7 @@ import static java.util.Arrays.asList;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasSize;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyLong;
@@ -72,6 +75,7 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -94,6 +98,7 @@ public class KafkaMirrorMakerAssemblyOperatorTest {
     private final String image = "my-image:latest";
 
     private final KubernetesVersion kubernetesVersion = KubernetesVersion.MINIMAL_SUPPORTED_VERSION;
+    private LicenseExpirationWatcher licenseExpirationWatcher;
 
     @BeforeAll
     public static void before() {
@@ -103,6 +108,29 @@ public class KafkaMirrorMakerAssemblyOperatorTest {
     @AfterAll
     public static void after() {
         vertx.close();
+    }
+
+    @BeforeEach
+    public void beforeEach() {
+        licenseExpirationWatcher = mock(LicenseExpirationWatcher.class);
+        when(licenseExpirationWatcher.isLicenseActive()).thenReturn(true);
+    }
+
+    @Test
+    public void testInactiveLicense(VertxTestContext context) {
+        var supplier = ResourceUtils.supplierWithMocks(true);
+        when(licenseExpirationWatcher.isLicenseActive()).thenReturn(false);
+
+        var ops = new KafkaMirrorMakerAssemblyOperator(vertx, new PlatformFeaturesAvailability(true, kubernetesVersion),
+                new MockCertManager(), new PasswordGenerator(10, "a", "a"),
+                supplier, ResourceUtils.dummyClusterOperatorConfig(VERSIONS), licenseExpirationWatcher);
+
+        var async = context.checkpoint();
+        ops.reconcile(new Reconciliation("test-trigger", KafkaMirrorMaker.RESOURCE_KIND, "test", "kmm"))
+                .onComplete(context.failing(e -> context.verify(() -> {
+                    assertEquals(AbstractOperator.INVALID_LICENSE_MSG, e.getMessage());
+                    async.flag();
+                })));
     }
 
     @Test
@@ -146,7 +174,7 @@ public class KafkaMirrorMakerAssemblyOperatorTest {
                 new PlatformFeaturesAvailability(true, kubernetesVersion),
                 new MockCertManager(), new PasswordGenerator(10, "a", "a"),
                 supplier,
-                ResourceUtils.dummyClusterOperatorConfig(VERSIONS));
+                ResourceUtils.dummyClusterOperatorConfig(VERSIONS), licenseExpirationWatcher);
 
         KafkaMirrorMakerCluster mirror = KafkaMirrorMakerCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kmm, VERSIONS, SHARED_ENV_PROVIDER);
 
@@ -240,7 +268,7 @@ public class KafkaMirrorMakerAssemblyOperatorTest {
                 new PlatformFeaturesAvailability(true, kubernetesVersion),
                 new MockCertManager(), new PasswordGenerator(10, "a", "a"),
                 supplier,
-                ResourceUtils.dummyClusterOperatorConfig(VERSIONS));
+                ResourceUtils.dummyClusterOperatorConfig(VERSIONS), licenseExpirationWatcher);
 
         Checkpoint async = context.checkpoint();
         ops.createOrUpdate(new Reconciliation("test-trigger", KafkaMirrorMaker.RESOURCE_KIND, kmmNamespace, kmmName), kmm)
@@ -342,7 +370,7 @@ public class KafkaMirrorMakerAssemblyOperatorTest {
                 new PlatformFeaturesAvailability(true, kubernetesVersion),
                 new MockCertManager(), new PasswordGenerator(10, "a", "a"),
                 supplier,
-                ResourceUtils.dummyClusterOperatorConfig(VERSIONS));
+                ResourceUtils.dummyClusterOperatorConfig(VERSIONS), licenseExpirationWatcher);
 
         Checkpoint async = context.checkpoint();
         ops.createOrUpdate(new Reconciliation("test-trigger", KafkaMirrorMaker.RESOURCE_KIND, kmmNamespace, kmmName), kmm)
@@ -430,7 +458,7 @@ public class KafkaMirrorMakerAssemblyOperatorTest {
                 new PlatformFeaturesAvailability(true, kubernetesVersion),
                 new MockCertManager(), new PasswordGenerator(10, "a", "a"),
                 supplier,
-                ResourceUtils.dummyClusterOperatorConfig(VERSIONS));
+                ResourceUtils.dummyClusterOperatorConfig(VERSIONS), licenseExpirationWatcher);
 
         Checkpoint async = context.checkpoint();
         ops.createOrUpdate(new Reconciliation("test-trigger", KafkaMirrorMaker.RESOURCE_KIND, kmmNamespace, kmmName), kmm)
@@ -484,7 +512,7 @@ public class KafkaMirrorMakerAssemblyOperatorTest {
                 new PlatformFeaturesAvailability(true, kubernetesVersion),
                 new MockCertManager(), new PasswordGenerator(10, "a", "a"),
                 supplier,
-                ResourceUtils.dummyClusterOperatorConfig(VERSIONS));
+                ResourceUtils.dummyClusterOperatorConfig(VERSIONS), licenseExpirationWatcher);
 
         Checkpoint async = context.checkpoint();
         ops.createOrUpdate(new Reconciliation("test-trigger", KafkaMirrorMaker.RESOURCE_KIND, kmmNamespace, kmmName), kmm)
@@ -542,7 +570,7 @@ public class KafkaMirrorMakerAssemblyOperatorTest {
                 new PlatformFeaturesAvailability(true, kubernetesVersion),
                 new MockCertManager(), new PasswordGenerator(10, "a", "a"),
                 supplier,
-                ResourceUtils.dummyClusterOperatorConfig(VERSIONS));
+                ResourceUtils.dummyClusterOperatorConfig(VERSIONS), licenseExpirationWatcher);
 
         Checkpoint async = context.checkpoint();
         ops.createOrUpdate(new Reconciliation("test-trigger", KafkaMirrorMaker.RESOURCE_KIND, kmmNamespace, kmmName), kmm)
@@ -600,7 +628,7 @@ public class KafkaMirrorMakerAssemblyOperatorTest {
                 new PlatformFeaturesAvailability(true, kubernetesVersion),
                 new MockCertManager(), new PasswordGenerator(10, "a", "a"),
                 supplier,
-                ResourceUtils.dummyClusterOperatorConfig(VERSIONS)) {
+                ResourceUtils.dummyClusterOperatorConfig(VERSIONS), licenseExpirationWatcher) {
 
             @Override
             public Future<KafkaMirrorMakerStatus> createOrUpdate(Reconciliation reconciliation, KafkaMirrorMaker kafkaMirrorMakerAssembly) {
@@ -658,7 +686,7 @@ public class KafkaMirrorMakerAssemblyOperatorTest {
                 new PlatformFeaturesAvailability(true, kubernetesVersion),
                 new MockCertManager(), new PasswordGenerator(10, "a", "a"),
                 supplier,
-                ResourceUtils.dummyClusterOperatorConfig(VERSIONS));
+                ResourceUtils.dummyClusterOperatorConfig(VERSIONS), licenseExpirationWatcher);
 
         Checkpoint async = context.checkpoint();
         ops.reconcile(new Reconciliation("test-trigger", KafkaMirrorMaker.RESOURCE_KIND, kmmNamespace, kmmName))
@@ -711,7 +739,7 @@ public class KafkaMirrorMakerAssemblyOperatorTest {
                 new PlatformFeaturesAvailability(true, kubernetesVersion),
                 new MockCertManager(), new PasswordGenerator(10, "a", "a"),
                 supplier,
-                ResourceUtils.dummyClusterOperatorConfig(VERSIONS));
+                ResourceUtils.dummyClusterOperatorConfig(VERSIONS), licenseExpirationWatcher);
 
         Checkpoint async = context.checkpoint();
         ops.reconcile(new Reconciliation("test-trigger", KafkaMirrorMaker.RESOURCE_KIND, kmmNamespace, kmmName))

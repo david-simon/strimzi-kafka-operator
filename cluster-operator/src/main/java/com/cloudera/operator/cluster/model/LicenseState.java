@@ -26,8 +26,12 @@ package com.cloudera.operator.cluster.model;
 public enum LicenseState {
     /** License is active */
     ACTIVE,
-    /** License is inactive */
-    INACTIVE,
+    /** License is expired */
+    EXPIRED,
+    /** License is invalid, there are some issues with the license */
+    INVALID,
+    /** License activity period not started yet */
+    NOT_STARTED,
     /** License is in grace period */
     GRACE_PERIOD,
     /** License is missing */
@@ -35,5 +39,7 @@ public enum LicenseState {
     /** License has no streaming feature */
     FEATURE_MISSING,
     /** License missing one or more date field(s) */
-    DATE_MISSING
+    DATE_MISSING,
+    /** License date fields are mixed up, start date is after expiration/deactivaion date */
+    START_DATE_INVALID
 }

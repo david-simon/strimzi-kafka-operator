@@ -4,6 +4,7 @@
  */
 package io.strimzi.operator.cluster.operator.assembly;
 
+import com.cloudera.operator.cluster.LicenseExpirationWatcher;
 import io.fabric8.kubernetes.api.model.ContainerStatusBuilder;
 import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.fabric8.kubernetes.api.model.Pod;
@@ -119,12 +120,14 @@ public class KafkaConnectAssemblyOperatorPodSetTest {
             .endSpec()
             .build();
     private static final KafkaConnectCluster CLUSTER = KafkaConnectCluster.fromCrd(RECONCILIATION, CONNECT, VERSIONS, SHARED_ENV_PROVIDER);
+    private static final LicenseExpirationWatcher LEW = mock(LicenseExpirationWatcher.class);
 
     protected static Vertx vertx;
 
     @BeforeAll
     public static void before() {
         vertx = Vertx.vertx();
+        when(LEW.isLicenseActive()).thenReturn(true);
     }
 
     @AfterAll
@@ -201,7 +204,8 @@ public class KafkaConnectAssemblyOperatorPodSetTest {
                 new PlatformFeaturesAvailability(false, KUBERNETES_VERSION),
                 supplier,
                 ResourceUtils.dummyClusterOperatorConfig(),
-                x -> mockConnectClient
+                x -> mockConnectClient,
+                LEW
         );
 
         Checkpoint async = context.checkpoint();
@@ -335,7 +339,8 @@ public class KafkaConnectAssemblyOperatorPodSetTest {
                 new PlatformFeaturesAvailability(false, KUBERNETES_VERSION),
                 supplier,
                 ResourceUtils.dummyClusterOperatorConfig(),
-                x -> mockConnectClient
+                x -> mockConnectClient,
+                LEW
         );
 
         Checkpoint async = context.checkpoint();
@@ -458,7 +463,8 @@ public class KafkaConnectAssemblyOperatorPodSetTest {
                 vertx,
                 new PlatformFeaturesAvailability(false, KUBERNETES_VERSION),
                 supplier,
-                ResourceUtils.dummyClusterOperatorConfig()
+                ResourceUtils.dummyClusterOperatorConfig(),
+                LEW
         );
 
         Checkpoint async = context.checkpoint();
@@ -549,7 +555,8 @@ public class KafkaConnectAssemblyOperatorPodSetTest {
                 vertx,
                 new PlatformFeaturesAvailability(false, KUBERNETES_VERSION),
                 supplier,
-                ResourceUtils.dummyClusterOperatorConfig()
+                ResourceUtils.dummyClusterOperatorConfig(),
+                LEW
         );
 
         Checkpoint async = context.checkpoint();
@@ -645,7 +652,8 @@ public class KafkaConnectAssemblyOperatorPodSetTest {
                 vertx,
                 new PlatformFeaturesAvailability(false, KUBERNETES_VERSION),
                 supplier,
-                ResourceUtils.dummyClusterOperatorConfig()
+                ResourceUtils.dummyClusterOperatorConfig(),
+                LEW
         );
 
         Checkpoint async = context.checkpoint();
@@ -736,7 +744,8 @@ public class KafkaConnectAssemblyOperatorPodSetTest {
                 vertx,
                 new PlatformFeaturesAvailability(false, KUBERNETES_VERSION),
                 supplier,
-                ResourceUtils.dummyClusterOperatorConfig()
+                ResourceUtils.dummyClusterOperatorConfig(),
+                LEW
         );
 
         Checkpoint async = context.checkpoint();
@@ -833,7 +842,8 @@ public class KafkaConnectAssemblyOperatorPodSetTest {
                 vertx,
                 new PlatformFeaturesAvailability(false, KUBERNETES_VERSION),
                 supplier,
-                ResourceUtils.dummyClusterOperatorConfig()
+                ResourceUtils.dummyClusterOperatorConfig(),
+                LEW
         );
 
         Checkpoint async = context.checkpoint();
@@ -961,7 +971,8 @@ public class KafkaConnectAssemblyOperatorPodSetTest {
                 new PlatformFeaturesAvailability(false, KUBERNETES_VERSION),
                 supplier,
                 ResourceUtils.dummyClusterOperatorConfig(),
-                x -> mockConnectClient
+                x -> mockConnectClient,
+                LEW
         );
 
         Checkpoint async = context.checkpoint();
@@ -1068,7 +1079,8 @@ public class KafkaConnectAssemblyOperatorPodSetTest {
                 vertx,
                 new PlatformFeaturesAvailability(false, KUBERNETES_VERSION),
                 supplier,
-                ResourceUtils.dummyClusterOperatorConfig()
+                ResourceUtils.dummyClusterOperatorConfig(),
+                LEW
         );
 
         Checkpoint async = context.checkpoint();
@@ -1165,7 +1177,8 @@ public class KafkaConnectAssemblyOperatorPodSetTest {
                 vertx,
                 new PlatformFeaturesAvailability(false, KUBERNETES_VERSION),
                 supplier,
-                ResourceUtils.dummyClusterOperatorConfig()
+                ResourceUtils.dummyClusterOperatorConfig(),
+                LEW
         );
 
         Checkpoint async = context.checkpoint();
@@ -1258,7 +1271,8 @@ public class KafkaConnectAssemblyOperatorPodSetTest {
                 vertx,
                 new PlatformFeaturesAvailability(false, KUBERNETES_VERSION),
                 supplier,
-                ResourceUtils.dummyClusterOperatorConfig()
+                ResourceUtils.dummyClusterOperatorConfig(),
+                LEW
         );
 
         Checkpoint async = context.checkpoint();
@@ -1315,7 +1329,7 @@ public class KafkaConnectAssemblyOperatorPodSetTest {
         Set<String> createdOrUpdated = new CopyOnWriteArraySet<>();
 
         KafkaConnectAssemblyOperator ops = new KafkaConnectAssemblyOperator(vertx, new PlatformFeaturesAvailability(true, KUBERNETES_VERSION),
-                supplier, ResourceUtils.dummyClusterOperatorConfig()) {
+                supplier, ResourceUtils.dummyClusterOperatorConfig(), LEW) {
 
             @Override
             public Future<KafkaConnectStatus> createOrUpdate(Reconciliation reconciliation, KafkaConnect kafkaConnectAssembly) {
@@ -1439,7 +1453,8 @@ public class KafkaConnectAssemblyOperatorPodSetTest {
                 vertx,
                 new PlatformFeaturesAvailability(false, KUBERNETES_VERSION),
                 supplier,
-                ResourceUtils.dummyClusterOperatorConfig()
+                ResourceUtils.dummyClusterOperatorConfig(),
+                LEW
         );
 
         Checkpoint async = context.checkpoint();
@@ -1548,7 +1563,8 @@ public class KafkaConnectAssemblyOperatorPodSetTest {
                 vertx,
                 new PlatformFeaturesAvailability(false, KUBERNETES_VERSION),
                 supplier,
-                ResourceUtils.dummyClusterOperatorConfig()
+                ResourceUtils.dummyClusterOperatorConfig(),
+                LEW
         );
 
         Checkpoint async = context.checkpoint();
@@ -1608,7 +1624,7 @@ public class KafkaConnectAssemblyOperatorPodSetTest {
         when(mockCntrOps.listAsync(any(), any(Labels.class))).thenReturn(Future.succeededFuture(List.of()));
 
         KafkaConnectAssemblyOperator op = new KafkaConnectAssemblyOperator(vertx, new PlatformFeaturesAvailability(true, KubernetesVersion.MINIMAL_SUPPORTED_VERSION),
-                supplier, ResourceUtils.dummyClusterOperatorConfig());
+                supplier, ResourceUtils.dummyClusterOperatorConfig(), LEW);
         Reconciliation reconciliation = new Reconciliation("test-trigger", KafkaConnect.RESOURCE_KIND, kcNamespace, kcName);
 
         Checkpoint async = context.checkpoint();
@@ -1661,7 +1677,7 @@ public class KafkaConnectAssemblyOperatorPodSetTest {
         when(mockPodOps.listAsync(eq(kcNamespace), any(Labels.class))).thenReturn(Future.succeededFuture(List.of()));
 
         KafkaConnectAssemblyOperator ops = new KafkaConnectAssemblyOperator(vertx, new PlatformFeaturesAvailability(true, KubernetesVersion.MINIMAL_SUPPORTED_VERSION),
-                supplier, ResourceUtils.dummyClusterOperatorConfig());
+                supplier, ResourceUtils.dummyClusterOperatorConfig(), LEW);
 
         Checkpoint async = context.checkpoint();
         ops.reconcile(new Reconciliation("unit-test", KafkaConnect.RESOURCE_KIND, kcNamespace, kcName))
@@ -1739,7 +1755,8 @@ public class KafkaConnectAssemblyOperatorPodSetTest {
                 vertx,
                 new PlatformFeaturesAvailability(false, KUBERNETES_VERSION),
                 supplier,
-                ResourceUtils.dummyClusterOperatorConfig()
+                ResourceUtils.dummyClusterOperatorConfig(),
+                LEW
         );
 
         Checkpoint async = context.checkpoint();
@@ -1821,7 +1838,8 @@ public class KafkaConnectAssemblyOperatorPodSetTest {
                 vertx,
                 new PlatformFeaturesAvailability(false, KUBERNETES_VERSION),
                 supplier,
-                ResourceUtils.dummyClusterOperatorConfig()
+                ResourceUtils.dummyClusterOperatorConfig(),
+                LEW
         );
 
         Checkpoint async = context.checkpoint();
@@ -1904,7 +1922,8 @@ public class KafkaConnectAssemblyOperatorPodSetTest {
                 vertx,
                 new PlatformFeaturesAvailability(false, KUBERNETES_VERSION),
                 supplier,
-                ResourceUtils.dummyClusterOperatorConfig()
+                ResourceUtils.dummyClusterOperatorConfig(),
+                LEW
         );
 
         Checkpoint async = context.checkpoint();

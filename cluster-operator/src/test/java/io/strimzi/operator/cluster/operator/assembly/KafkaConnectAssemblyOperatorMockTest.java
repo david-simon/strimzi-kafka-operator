@@ -4,6 +4,7 @@
  */
 package io.strimzi.operator.cluster.operator.assembly;
 
+import com.cloudera.operator.cluster.LicenseExpirationWatcher;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.strimzi.api.kafka.Crds;
@@ -48,6 +49,7 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
@@ -73,6 +75,7 @@ public class KafkaConnectAssemblyOperatorMockTest {
     private KafkaConnectAssemblyOperator kco;
     private StrimziPodSetController podSetController;
     private ResourceOperatorSupplier supplier;
+    private LicenseExpirationWatcher licenseExpirationWatcher;
 
     @BeforeAll
     public static void beforeAll() {
@@ -106,6 +109,9 @@ public class KafkaConnectAssemblyOperatorMockTest {
         supplier = new ResourceOperatorSupplier(vertx, client, ResourceUtils.zookeeperLeaderFinder(vertx, client), ResourceUtils.adminClientProvider(), ResourceUtils.zookeeperScalerProvider(), ResourceUtils.kafkaAgentClientProvider(), ResourceUtils.metricsProvider(), PFA, 2_000);
         podSetController = new StrimziPodSetController(namespace, Labels.EMPTY, supplier.kafkaOperator, supplier.connectOperator, supplier.mirrorMaker2Operator, supplier.strimziPodSetOperator, supplier.podOperations, supplier.metricsProvider, Integer.parseInt(ClusterOperatorConfig.POD_SET_CONTROLLER_WORK_QUEUE_SIZE.defaultValue()));
         podSetController.start();
+
+        licenseExpirationWatcher = mock(LicenseExpirationWatcher.class);
+        when(licenseExpirationWatcher.isLicenseActive()).thenReturn(true);
     }
 
     @AfterEach
@@ -116,7 +122,7 @@ public class KafkaConnectAssemblyOperatorMockTest {
 
     private Future<Void> createConnectCluster(VertxTestContext context, KafkaConnectApi kafkaConnectApi, boolean reconciliationPaused) {
         ClusterOperatorConfig config = ResourceUtils.dummyClusterOperatorConfig(VERSIONS);
-        this.kco = new KafkaConnectAssemblyOperator(vertx, PFA, supplier, config, foo -> kafkaConnectApi);
+        this.kco = new KafkaConnectAssemblyOperator(vertx, PFA, supplier, config, foo -> kafkaConnectApi, licenseExpirationWatcher);
 
         Promise<Void> created = Promise.promise();
 
@@ -136,6 +142,21 @@ public class KafkaConnectAssemblyOperatorMockTest {
                 created.complete();
             })));
         return created.future();
+    }
+
+    @Test
+    public void testInactiveLicense(VertxTestContext context) {
+        when(licenseExpirationWatcher.isLicenseActive()).thenReturn(false);
+
+        kco = new KafkaConnectAssemblyOperator(vertx, PFA, supplier,
+                ResourceUtils.dummyClusterOperatorConfig(VERSIONS), foo -> mock(KafkaConnectApi.class), licenseExpirationWatcher);
+
+        var async = context.checkpoint();
+        kco.reconcile(new Reconciliation("test-trigger", KafkaConnect.RESOURCE_KIND, namespace, CLUSTER_NAME))
+                .onComplete(context.failing(e -> context.verify(() -> {
+                    assertEquals(AbstractOperator.INVALID_LICENSE_MSG, e.getMessage());
+                    async.flag();
+                })));
     }
 
     @Test

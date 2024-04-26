@@ -4,6 +4,7 @@
  */
 package io.strimzi.operator.cluster.operator.assembly;
 
+import com.cloudera.operator.cluster.LicenseExpirationWatcher;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.fabric8.kubernetes.api.model.LabelSelectorBuilder;
@@ -77,11 +78,13 @@ public class KafkaConnectAssemblyOperator extends AbstractConnectOperator<Kubern
      * @param pfa Platform features availability properties
      * @param supplier Supplies the operators for different resources
      * @param config ClusterOperator configuration. Used to get the user-configured image pull policy and the secrets.
+     * @param licenseExpirationWatcher Cloudera license expiration watcher
      */
     public KafkaConnectAssemblyOperator(Vertx vertx, PlatformFeaturesAvailability pfa,
                                         ResourceOperatorSupplier supplier,
-                                        ClusterOperatorConfig config) {
-        this(vertx, pfa, supplier, config, connect -> new KafkaConnectApiImpl(vertx));
+                                        ClusterOperatorConfig config,
+                                        LicenseExpirationWatcher licenseExpirationWatcher) {
+        this(vertx, pfa, supplier, config, connect -> new KafkaConnectApiImpl(vertx), licenseExpirationWatcher);
     }
 
     /**
@@ -93,12 +96,14 @@ public class KafkaConnectAssemblyOperator extends AbstractConnectOperator<Kubern
      * @param config                    ClusterOperator configuration. Used to get the user-configured image pull policy
      *                                  and the secrets.
      * @param connectClientProvider     Provider of the Kafka Connect client
+     * @param licenseExpirationWatcher  Cloudera license expiration watcher
      */
     protected KafkaConnectAssemblyOperator(Vertx vertx, PlatformFeaturesAvailability pfa,
                                         ResourceOperatorSupplier supplier,
                                         ClusterOperatorConfig config,
-                                        Function<Vertx, KafkaConnectApi> connectClientProvider) {
-        this(vertx, pfa, supplier, config, connectClientProvider, KafkaConnectCluster.REST_API_PORT);
+                                        Function<Vertx, KafkaConnectApi> connectClientProvider,
+                                        LicenseExpirationWatcher licenseExpirationWatcher) {
+        this(vertx, pfa, supplier, config, connectClientProvider, KafkaConnectCluster.REST_API_PORT, licenseExpirationWatcher);
     }
 
     /**
@@ -112,12 +117,14 @@ public class KafkaConnectAssemblyOperator extends AbstractConnectOperator<Kubern
      *                                  and the secrets.
      * @param connectClientProvider     Provider of the Kafka Connect client
      * @param port                      Port of the Kafka Connect REST API
+     * @param licenseExpirationWatcher  Cloudera license expiration watcher
      */
     protected KafkaConnectAssemblyOperator(Vertx vertx, PlatformFeaturesAvailability pfa,
                                         ResourceOperatorSupplier supplier,
                                         ClusterOperatorConfig config,
-                                        Function<Vertx, KafkaConnectApi> connectClientProvider, int port) {
-        super(vertx, pfa, KafkaConnect.RESOURCE_KIND, supplier.connectOperator, supplier, config, connectClientProvider, port);
+                                        Function<Vertx, KafkaConnectApi> connectClientProvider, int port,
+                                        LicenseExpirationWatcher licenseExpirationWatcher) {
+        super(vertx, pfa, KafkaConnect.RESOURCE_KIND, supplier.connectOperator, supplier, config, connectClientProvider, port, licenseExpirationWatcher);
 
         this.connectBuildOperator = new ConnectBuildOperator(pfa, supplier, config);
     }

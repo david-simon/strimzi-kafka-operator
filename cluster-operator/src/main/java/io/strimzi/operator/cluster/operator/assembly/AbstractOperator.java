@@ -4,6 +4,7 @@
  */
 package io.strimzi.operator.cluster.operator.assembly;
 
+import com.cloudera.operator.cluster.LicenseExpirationWatcher;
 import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.client.Watcher;
@@ -70,6 +71,10 @@ public abstract class AbstractOperator<
         O extends AbstractWatchableStatusedNamespacedResourceOperator<?, T, ?, ?>>
             implements Operator {
 
+    /**
+     * Error message in case of an invalid license
+     */
+    public static final String INVALID_LICENSE_MSG = "License is invalid. Details available through events of the cluster operator or in the logs.";
     private static final ReconciliationLogger LOGGER = ReconciliationLogger.create(AbstractOperator.class);
 
     private static final long PROGRESS_WARNING = 60_000L;
@@ -89,24 +94,27 @@ public abstract class AbstractOperator<
     protected final OperatorMetricsHolder metrics;
 
     private final Map<String, AtomicInteger> resourcesStateCounter = new ConcurrentHashMap<>(1);
+    protected final LicenseExpirationWatcher licenseExpirationWatcher;
 
     /**
      * Constructs the AbstractOperator. This constructor is used to construct the AbstractOperator using the
      * OperatorMetricsHolder instance. This constructor is used by subclasses which want to use specialized metrics
      * ¨holder such as the subclasses dealing with KafkaConnector resources and their metrics.
      *
-     * @param vertx             Vert.x instance
-     * @param kind              Resource kind which will be operated by this operator
-     * @param resourceOperator  Resource operator for given custom resource
-     * @param metrics           MetricsHolder for managing operator metrics
-     * @param selectorLabels    Selector labels for selecting custom resources which should be operated
+     * @param vertx                         Vert.x instance
+     * @param kind                          Resource kind which will be operated by this operator
+     * @param resourceOperator              Resource operator for given custom resource
+     * @param metrics                       MetricsHolder for managing operator metrics
+     * @param selectorLabels                Selector labels for selecting custom resources which should be operated
+     * @param licenseExpirationWatcher      Cloudera license expiration watcher
      */
-    public AbstractOperator(Vertx vertx, String kind, O resourceOperator, OperatorMetricsHolder metrics, Labels selectorLabels) {
+    public AbstractOperator(Vertx vertx, String kind, O resourceOperator, OperatorMetricsHolder metrics, Labels selectorLabels, LicenseExpirationWatcher licenseExpirationWatcher) {
         this.vertx = vertx;
         this.kind = kind;
         this.resourceOperator = resourceOperator;
         this.selector = (selectorLabels == null || selectorLabels.toMap().isEmpty()) ? null : new LabelSelector(null, selectorLabels.toMap());
         this.metrics = metrics;
+        this.licenseExpirationWatcher = licenseExpirationWatcher;
     }
 
     /**
@@ -114,14 +122,15 @@ public abstract class AbstractOperator<
      * MetricsProvider instance, which is used to create OperatorMetricsHolder inside the constructor. It is used by
      * subclasses which do not need a more specialized type of metrics holder.
      *
-     * @param vertx             Vert.x instance
-     * @param kind              Resource kind which will be operated by this operator
-     * @param resourceOperator  Resource operator for given custom resource
-     * @param metricsProvider   Metrics provider which should be used to create the OperatorMetricsHolder instance
-     * @param selectorLabels    Selector labels for selecting custom resources which should be operated
+     * @param vertx                         Vert.x instance
+     * @param kind                          Resource kind which will be operated by this operator
+     * @param resourceOperator              Resource operator for given custom resource
+     * @param metricsProvider               Metrics provider which should be used to create the OperatorMetricsHolder instance
+     * @param selectorLabels                Selector labels for selecting custom resources which should be operated
+     * @param licenseExpirationWatcher      Cloudera license expiration watcher
      */
-    public AbstractOperator(Vertx vertx, String kind, O resourceOperator, MetricsProvider metricsProvider, Labels selectorLabels) {
-        this(vertx, kind, resourceOperator, new OperatorMetricsHolder(kind, selectorLabels, metricsProvider), selectorLabels);
+    public AbstractOperator(Vertx vertx, String kind, O resourceOperator, MetricsProvider metricsProvider, Labels selectorLabels, LicenseExpirationWatcher licenseExpirationWatcher) {
+        this(vertx, kind, resourceOperator, new OperatorMetricsHolder(kind, selectorLabels, metricsProvider), selectorLabels, licenseExpirationWatcher);
     }
 
     @Override
@@ -184,10 +193,14 @@ public abstract class AbstractOperator<
 
         metrics().reconciliationsCounter(reconciliation.namespace()).increment();
         Timer.Sample reconciliationTimerSample = Timer.start(metrics().metricsProvider().meterRegistry());
-
-        Future<Void> handler = withLock(reconciliation, LOCK_TIMEOUT_MS, () ->
-            resourceOperator.getAsync(namespace, name)
-                .compose(cr -> cr != null ? reconcileResource(reconciliation, cr) : reconcileDeletion(reconciliation)));
+        Future<Void> handler;
+        if (licenseExpirationWatcher.isLicenseActive()) {
+            handler = withLock(reconciliation, LOCK_TIMEOUT_MS, () ->
+                    resourceOperator.getAsync(namespace, name)
+                            .compose(cr -> cr != null ? reconcileResource(reconciliation, cr) : reconcileDeletion(reconciliation)));
+        } else {
+            handler = Future.failedFuture(INVALID_LICENSE_MSG);
+        }
 
         Promise<Void> result = Promise.promise();
         handler.onComplete(reconcileResult ->

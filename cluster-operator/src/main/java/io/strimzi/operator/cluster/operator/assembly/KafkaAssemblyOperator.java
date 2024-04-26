@@ -4,6 +4,7 @@
  */
 package io.strimzi.operator.cluster.operator.assembly;
 
+import com.cloudera.operator.cluster.LicenseExpirationWatcher;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.ResourceRequirements;
 import io.fabric8.kubernetes.api.model.apps.StatefulSet;
@@ -120,13 +121,15 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
      * @param certManager Certificate manager
      * @param passwordGenerator Password generator
      * @param supplier Supplies the operators for different resources
-     * @param config ClusterOperator configuration. Used to get the user-configured image pull policy and the secrets.
+     * @param config ClusterOperator configuration. Used to get the user-configured image pull policy and the secrets
+     * @param licenseExpirationWatcher Cloudera license expiration watcher.
      */
     public KafkaAssemblyOperator(Vertx vertx, PlatformFeaturesAvailability pfa,
                                  CertManager certManager, PasswordGenerator passwordGenerator,
-                                 ResourceOperatorSupplier supplier, ClusterOperatorConfig config) {
+                                 ResourceOperatorSupplier supplier, ClusterOperatorConfig config,
+                                 LicenseExpirationWatcher licenseExpirationWatcher) {
         super(vertx, pfa, Kafka.RESOURCE_KIND, certManager, passwordGenerator,
-                supplier.kafkaOperator, supplier, config);
+                supplier.kafkaOperator, supplier, config, licenseExpirationWatcher);
         this.config = config;
         this.supplier = supplier;
 

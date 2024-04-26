@@ -4,6 +4,7 @@
  */
 package io.strimzi.operator.cluster.operator.assembly;
 
+import com.cloudera.operator.cluster.LicenseExpirationWatcher;
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
 import io.fabric8.kubernetes.api.model.LabelSelector;
@@ -58,6 +59,7 @@ import io.strimzi.operator.common.operator.resource.SecretOperator;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
+import io.vertx.core.impl.NoStackTraceThrowable;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 
@@ -165,10 +167,11 @@ public class KafkaRebalanceAssemblyOperator
      * @param vertx The Vertx instance
      * @param supplier Supplies the operators for different resources
      * @param config Cluster Operator configuration
+     * @param licenseExpirationWatcher Cloudera license expiration watcher
      */
-    public KafkaRebalanceAssemblyOperator(Vertx vertx,
-                                          ResourceOperatorSupplier supplier, ClusterOperatorConfig config) {
-        super(vertx, KafkaRebalance.RESOURCE_KIND, supplier.kafkaRebalanceOperator, supplier.metricsProvider, null);
+    public KafkaRebalanceAssemblyOperator(Vertx vertx, ResourceOperatorSupplier supplier,
+                                          ClusterOperatorConfig config, LicenseExpirationWatcher licenseExpirationWatcher) {
+        super(vertx, KafkaRebalance.RESOURCE_KIND, supplier.kafkaRebalanceOperator, supplier.metricsProvider, null, licenseExpirationWatcher);
         this.kafkaSelector = (config.getCustomResourceSelector() == null || config.getCustomResourceSelector().toMap().isEmpty()) ? null : new LabelSelector(null, config.getCustomResourceSelector().toMap());
         this.kafkaRebalanceOperator = supplier.kafkaRebalanceOperator;
         this.kafkaOperator = supplier.kafkaOperator;
@@ -1154,10 +1157,17 @@ public class KafkaRebalanceAssemblyOperator
     /**
      * Reconcile loop for the KafkaRebalance
      */
+    @SuppressWarnings({"checkstyle:NPathComplexity", "checkstyle:CyclomaticComplexity"})
     /* test */ Future<Void> reconcileRebalance(Reconciliation reconciliation, KafkaRebalance kafkaRebalance) {
         if (kafkaRebalance == null) {
             LOGGER.infoCr(reconciliation, "Rebalance resource deleted");
             return Future.succeededFuture();
+        }
+
+        if (!licenseExpirationWatcher.isLicenseActive()) {
+            var throwable = new NoStackTraceThrowable(INVALID_LICENSE_MSG);
+            LOGGER.warnCr(reconciliation, "Failed to reconcile", throwable);
+            return Future.failedFuture(throwable);
         }
 
         if (kafkaRebalance.getStatus() != null

@@ -4,6 +4,7 @@
  */
 package io.strimzi.operator.cluster.operator.assembly;
 
+import com.cloudera.operator.cluster.LicenseExpirationWatcher;
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ServiceAccount;
 import io.fabric8.kubernetes.client.KubernetesClient;
@@ -63,12 +64,14 @@ public class KafkaMirrorMakerAssemblyOperator extends AbstractAssemblyOperator<K
      * @param passwordGenerator Password generator
      * @param supplier Supplies the operators for different resources
      * @param config ClusterOperator configuration. Used to get the user-configured image pull policy and the secrets.
+     * @param licenseExpirationWatcher Cloudera license expiration watcher
      */
     public KafkaMirrorMakerAssemblyOperator(Vertx vertx, PlatformFeaturesAvailability pfa,
                                             CertManager certManager, PasswordGenerator passwordGenerator,
                                             ResourceOperatorSupplier supplier,
-                                            ClusterOperatorConfig config) {
-        super(vertx, pfa, KafkaMirrorMaker.RESOURCE_KIND, certManager, passwordGenerator, supplier.mirrorMakerOperator, supplier, config);
+                                            ClusterOperatorConfig config,
+                                            LicenseExpirationWatcher licenseExpirationWatcher) {
+        super(vertx, pfa, KafkaMirrorMaker.RESOURCE_KIND, certManager, passwordGenerator, supplier.mirrorMakerOperator, supplier, config, licenseExpirationWatcher);
         this.deploymentOperations = supplier.deploymentOperations;
         this.versions = config.versions();
         this.sharedEnvironmentProvider = supplier.sharedEnvironmentProvider;

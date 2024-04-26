@@ -4,6 +4,7 @@
  */
 package io.strimzi.operator.cluster.operator.assembly;
 
+import com.cloudera.operator.cluster.LicenseExpirationWatcher;
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.fabric8.kubernetes.api.model.Pod;
@@ -98,6 +99,7 @@ public class KafkaMirrorMaker2AssemblyOperatorPodSetTest {
     private static final KubernetesVersion KUBERNETES_VERSION = KubernetesVersion.MINIMAL_SUPPORTED_VERSION;
     private static final Reconciliation RECONCILIATION = new Reconciliation("test", "KafkaMirrorMaker2", NAMESPACE, NAME);
     private static final SharedEnvironmentProvider SHARED_ENV_PROVIDER = new MockSharedEnvironmentProvider();
+    private static final LicenseExpirationWatcher LEW = mock(LicenseExpirationWatcher.class);
 
     private static final KafkaMirrorMaker2 MM2 = new KafkaMirrorMaker2Builder()
             .withNewMetadata()
@@ -117,6 +119,7 @@ public class KafkaMirrorMaker2AssemblyOperatorPodSetTest {
     @BeforeAll
     public static void before() {
         vertx = Vertx.vertx();
+        when(LEW.isLicenseActive()).thenReturn(true);
     }
 
     @AfterAll
@@ -186,7 +189,8 @@ public class KafkaMirrorMaker2AssemblyOperatorPodSetTest {
                 new PlatformFeaturesAvailability(false, KUBERNETES_VERSION),
                 supplier,
                 ResourceUtils.dummyClusterOperatorConfig(),
-                x -> mockConnectClient
+                x -> mockConnectClient,
+                LEW
         );
 
         Checkpoint async = context.checkpoint();
@@ -307,7 +311,8 @@ public class KafkaMirrorMaker2AssemblyOperatorPodSetTest {
                 new PlatformFeaturesAvailability(false, KUBERNETES_VERSION),
                 supplier,
                 ResourceUtils.dummyClusterOperatorConfig(),
-                x -> mockConnectClient
+                x -> mockConnectClient,
+                LEW
         );
 
         Checkpoint async = context.checkpoint();
@@ -404,7 +409,8 @@ public class KafkaMirrorMaker2AssemblyOperatorPodSetTest {
                 new PlatformFeaturesAvailability(false, KUBERNETES_VERSION),
                 supplier,
                 ResourceUtils.dummyClusterOperatorConfig(),
-                x -> mockConnectClient
+                x -> mockConnectClient,
+                LEW
         );
 
         Checkpoint async = context.checkpoint();
@@ -506,7 +512,8 @@ public class KafkaMirrorMaker2AssemblyOperatorPodSetTest {
                 new PlatformFeaturesAvailability(false, KUBERNETES_VERSION),
                 supplier,
                 ResourceUtils.dummyClusterOperatorConfig(),
-                x -> mockConnectClient
+                x -> mockConnectClient,
+                LEW
         );
 
         Checkpoint async = context.checkpoint();
@@ -603,7 +610,8 @@ public class KafkaMirrorMaker2AssemblyOperatorPodSetTest {
                 new PlatformFeaturesAvailability(false, KUBERNETES_VERSION),
                 supplier,
                 ResourceUtils.dummyClusterOperatorConfig(),
-                x -> mockConnectClient
+                x -> mockConnectClient,
+                LEW
         );
 
         Checkpoint async = context.checkpoint();
@@ -722,7 +730,8 @@ public class KafkaMirrorMaker2AssemblyOperatorPodSetTest {
                 new PlatformFeaturesAvailability(false, KUBERNETES_VERSION),
                 supplier,
                 ResourceUtils.dummyClusterOperatorConfig(),
-                x -> mockConnectClient
+                x -> mockConnectClient,
+                LEW
         );
 
         Checkpoint async = context.checkpoint();
@@ -840,7 +849,8 @@ public class KafkaMirrorMaker2AssemblyOperatorPodSetTest {
                 new PlatformFeaturesAvailability(false, KUBERNETES_VERSION),
                 supplier,
                 ResourceUtils.dummyClusterOperatorConfig(),
-                x -> mockConnectClient
+                x -> mockConnectClient,
+                LEW
         );
 
         Checkpoint async = context.checkpoint();
@@ -882,7 +892,7 @@ public class KafkaMirrorMaker2AssemblyOperatorPodSetTest {
         Checkpoint async = context.checkpoint();
 
         KafkaMirrorMaker2AssemblyOperator ops = new KafkaMirrorMaker2AssemblyOperator(vertx, new PlatformFeaturesAvailability(true, KUBERNETES_VERSION),
-                supplier, ResourceUtils.dummyClusterOperatorConfig()) {
+                supplier, ResourceUtils.dummyClusterOperatorConfig(), LEW) {
 
             @Override
             public Future<KafkaMirrorMaker2Status> createOrUpdate(Reconciliation reconciliation, KafkaMirrorMaker2 kafkaMirrorMaker2Assembly) {
@@ -978,7 +988,8 @@ public class KafkaMirrorMaker2AssemblyOperatorPodSetTest {
                 new PlatformFeaturesAvailability(false, KUBERNETES_VERSION),
                 supplier,
                 ResourceUtils.dummyClusterOperatorConfig(),
-                x -> mockConnectClient
+                x -> mockConnectClient,
+                LEW
         );
 
         Checkpoint async = context.checkpoint();
@@ -1059,7 +1070,7 @@ public class KafkaMirrorMaker2AssemblyOperatorPodSetTest {
         kmm2.getSpec().setMirrors(List.of(deprecatedMirrorConnector));
 
         KafkaMirrorMaker2AssemblyOperator mm2AssemblyOperator = new KafkaMirrorMaker2AssemblyOperator(vertx, new PlatformFeaturesAvailability(true, KubernetesVersion.MINIMAL_SUPPORTED_VERSION),
-                supplier, ResourceUtils.dummyClusterOperatorConfig(), x -> mockConnectClient);
+                supplier, ResourceUtils.dummyClusterOperatorConfig(), x -> mockConnectClient, LEW);
 
         Checkpoint async = context.checkpoint();
         KafkaMirrorMaker2Cluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kmm2, VERSIONS, supplier.sharedEnvironmentProvider);
@@ -1109,7 +1120,7 @@ public class KafkaMirrorMaker2AssemblyOperatorPodSetTest {
         kmm2.getSpec().setMirrors(List.of(deprecatedMirrorConnector));
 
         KafkaMirrorMaker2AssemblyOperator mm2AssemblyOperator = new KafkaMirrorMaker2AssemblyOperator(vertx, new PlatformFeaturesAvailability(true, KubernetesVersion.MINIMAL_SUPPORTED_VERSION),
-                supplier, ResourceUtils.dummyClusterOperatorConfig(), x -> mockConnectClient);
+                supplier, ResourceUtils.dummyClusterOperatorConfig(), x -> mockConnectClient, LEW);
 
         Checkpoint async = context.checkpoint();
         KafkaMirrorMaker2Cluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kmm2, VERSIONS, supplier.sharedEnvironmentProvider);
@@ -1132,7 +1143,7 @@ public class KafkaMirrorMaker2AssemblyOperatorPodSetTest {
         when(mockCrbOps.reconcile(any(), eq(KafkaMirrorMaker2Resources.initContainerClusterRoleBindingName(NAME, NAMESPACE)), desiredCrb.capture())).thenReturn(Future.succeededFuture());
 
         KafkaMirrorMaker2AssemblyOperator op = new KafkaMirrorMaker2AssemblyOperator(vertx, new PlatformFeaturesAvailability(true, KubernetesVersion.MINIMAL_SUPPORTED_VERSION),
-                supplier, ResourceUtils.dummyClusterOperatorConfig());
+                supplier, ResourceUtils.dummyClusterOperatorConfig(), LEW);
         Reconciliation reconciliation = new Reconciliation("test-trigger", KafkaMirrorMaker2.RESOURCE_KIND, NAMESPACE, NAME);
 
         Checkpoint async = context.checkpoint();
@@ -1257,7 +1268,8 @@ public class KafkaMirrorMaker2AssemblyOperatorPodSetTest {
                 new PlatformFeaturesAvailability(false, KUBERNETES_VERSION),
                 supplier,
                 ResourceUtils.dummyClusterOperatorConfig(),
-                x -> mockConnectClient
+                x -> mockConnectClient,
+                LEW
         );
 
         Checkpoint async = context.checkpoint();
@@ -1345,7 +1357,8 @@ public class KafkaMirrorMaker2AssemblyOperatorPodSetTest {
                 new PlatformFeaturesAvailability(false, KUBERNETES_VERSION),
                 supplier,
                 ResourceUtils.dummyClusterOperatorConfig(),
-                x -> mockConnectClient
+                x -> mockConnectClient,
+                LEW
         );
 
         Checkpoint async = context.checkpoint();
@@ -1434,7 +1447,8 @@ public class KafkaMirrorMaker2AssemblyOperatorPodSetTest {
                 new PlatformFeaturesAvailability(false, KUBERNETES_VERSION),
                 supplier,
                 ResourceUtils.dummyClusterOperatorConfig(),
-                x -> mockConnectClient
+                x -> mockConnectClient,
+                LEW
         );
 
         Checkpoint async = context.checkpoint();

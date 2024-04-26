@@ -70,7 +70,7 @@ public class LicenseExpirationWatcherIT extends LicenseExpirationWatcherTestBase
 
         getLicenseExpirationWatcher().doLicenseExpirationWatching();
 
-        assertLicenseNotFound();
+        assertLicenseInactive();
     }
 
     @Test

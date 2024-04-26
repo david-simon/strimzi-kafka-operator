@@ -111,6 +111,11 @@ public abstract class LicenseExpirationWatcherTestBase {
         assertLicenseState(LicenseState.MISSING);
     }
 
+    protected void assertLicenseInactive() {
+        assertLicenseNotActiveAndEventCreated();
+        assertLicenseState(LicenseState.INVALID);
+    }
+
     protected void assertLicenseNotActiveAndEventCreated() {
         assertFalse(licenseExpirationWatcher.isLicenseActive());
         assertFalse(capturedEvent.getAllValues().isEmpty());

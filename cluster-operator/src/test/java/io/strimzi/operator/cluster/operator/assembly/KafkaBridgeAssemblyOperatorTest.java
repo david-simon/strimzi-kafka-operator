@@ -4,6 +4,7 @@
  */
 package io.strimzi.operator.cluster.operator.assembly;
 
+import com.cloudera.operator.cluster.LicenseExpirationWatcher;
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
 import io.fabric8.kubernetes.api.model.LabelSelector;
@@ -52,6 +53,7 @@ import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
@@ -70,6 +72,7 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasSize;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
@@ -78,6 +81,7 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -98,6 +102,7 @@ public class KafkaBridgeAssemblyOperatorTest {
     private final String image = "kafka-bridge:latest";
 
     private final KubernetesVersion kubernetesVersion = KubernetesVersion.MINIMAL_SUPPORTED_VERSION;
+    private LicenseExpirationWatcher licenseExpirationWatcher;
 
     @BeforeAll
     public static void before() {
@@ -107,6 +112,37 @@ public class KafkaBridgeAssemblyOperatorTest {
     @AfterAll
     public static void after() {
         vertx.close();
+    }
+
+    @BeforeEach
+    public void beforeEach() {
+        licenseExpirationWatcher = mock(LicenseExpirationWatcher.class);
+        when(licenseExpirationWatcher.isLicenseActive()).thenReturn(true);
+    }
+
+    @Test
+    public void testInactiveLicense(VertxTestContext context) {
+        var kbName = "foo";
+        var kbNamespace = "test";
+        var supplier = ResourceUtils.supplierWithMocks(true);
+        var kb = ResourceUtils.createKafkaBridge(kbNamespace, kbName, image, 1,
+                BOOTSTRAP_SERVERS, KAFKA_BRIDGE_PRODUCER_SPEC, KAFKA_BRIDGE_CONSUMER_SPEC, KAFKA_BRIDGE_HTTP_SPEC, true);
+        var mockBridgeOps = supplier.kafkaBridgeOperator;
+        when(mockBridgeOps.get(kbNamespace, kbName)).thenReturn(kb);
+        when(mockBridgeOps.getAsync(anyString(), anyString())).thenReturn(Future.succeededFuture(kb));
+        when(mockBridgeOps.get(anyString(), anyString())).thenReturn(kb);
+        when(licenseExpirationWatcher.isLicenseActive()).thenReturn(false);
+
+        var ops = new KafkaBridgeAssemblyOperator(vertx, new PlatformFeaturesAvailability(true, kubernetesVersion),
+                new MockCertManager(), new PasswordGenerator(10, "a", "a"),
+                supplier, ResourceUtils.dummyClusterOperatorConfig(VERSIONS), licenseExpirationWatcher);
+
+        var async = context.checkpoint();
+        ops.reconcile(new Reconciliation("test-trigger", KafkaBridge.RESOURCE_KIND, kbNamespace, kbName))
+                .onComplete(context.failing(e -> context.verify(() -> {
+                    assertEquals(AbstractOperator.INVALID_LICENSE_MSG, e.getMessage());
+                    async.flag();
+                })));
     }
 
     @Test
@@ -149,7 +185,8 @@ public class KafkaBridgeAssemblyOperatorTest {
                 new PlatformFeaturesAvailability(true, kubernetesVersion),
                 new MockCertManager(), new PasswordGenerator(10, "a", "a"),
                 supplier,
-                ResourceUtils.dummyClusterOperatorConfig(VERSIONS));
+                ResourceUtils.dummyClusterOperatorConfig(VERSIONS),
+                licenseExpirationWatcher);
 
         KafkaBridgeCluster bridge = KafkaBridgeCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kb, SHARED_ENV_PROVIDER);
 
@@ -237,7 +274,8 @@ public class KafkaBridgeAssemblyOperatorTest {
                 new PlatformFeaturesAvailability(true, kubernetesVersion),
                 new MockCertManager(), new PasswordGenerator(10, "a", "a"),
                 supplier,
-                ResourceUtils.dummyClusterOperatorConfig(VERSIONS));
+                ResourceUtils.dummyClusterOperatorConfig(VERSIONS),
+                licenseExpirationWatcher);
 
         Checkpoint async = context.checkpoint();
         ops.createOrUpdate(new Reconciliation("test-trigger", KafkaBridge.RESOURCE_KIND, kbNamespace, kbName), kb)
@@ -332,7 +370,8 @@ public class KafkaBridgeAssemblyOperatorTest {
                 new PlatformFeaturesAvailability(true, kubernetesVersion),
                 new MockCertManager(), new PasswordGenerator(10, "a", "a"),
                 supplier,
-                ResourceUtils.dummyClusterOperatorConfig(VERSIONS));
+                ResourceUtils.dummyClusterOperatorConfig(VERSIONS),
+                licenseExpirationWatcher);
 
         Checkpoint async = context.checkpoint();
         ops.createOrUpdate(new Reconciliation("test-trigger", KafkaBridge.RESOURCE_KIND, kbNamespace, kbName), kb)
@@ -388,7 +427,8 @@ public class KafkaBridgeAssemblyOperatorTest {
 
         KafkaBridgeAssemblyOperator op = new KafkaBridgeAssemblyOperator(vertx, new PlatformFeaturesAvailability(true, kubernetesVersion),
                                                                          new MockCertManager(), new PasswordGenerator(10, "a", "a"),
-                                                                         supplier, ResourceUtils.dummyClusterOperatorConfig(VERSIONS));
+                                                                         supplier, ResourceUtils.dummyClusterOperatorConfig(VERSIONS),
+                licenseExpirationWatcher);
         Reconciliation reconciliation = new Reconciliation("test-trigger", KafkaBridge.RESOURCE_KIND, bridgeNamespace, bridgeName);
 
         Checkpoint async = context.checkpoint();
@@ -454,7 +494,8 @@ public class KafkaBridgeAssemblyOperatorTest {
                 new PlatformFeaturesAvailability(true, kubernetesVersion),
                 new MockCertManager(), new PasswordGenerator(10, "a", "a"),
                 supplier,
-                ResourceUtils.dummyClusterOperatorConfig(VERSIONS));
+                ResourceUtils.dummyClusterOperatorConfig(VERSIONS),
+                licenseExpirationWatcher);
 
         Checkpoint async = context.checkpoint();
         ops.createOrUpdate(new Reconciliation("test-trigger", KafkaBridge.RESOURCE_KIND, kbNamespace, kbName), kb)
@@ -504,7 +545,8 @@ public class KafkaBridgeAssemblyOperatorTest {
         when(mockPdbOps.reconcile(any(), anyString(), any(), any())).thenReturn(Future.succeededFuture(ReconcileResult.created(new PodDisruptionBudget())));
 
         KafkaBridgeAssemblyOperator ops = new KafkaBridgeAssemblyOperator(vertx, new PlatformFeaturesAvailability(true, kubernetesVersion),
-                new MockCertManager(), new PasswordGenerator(10, "a", "a"), supplier, ResourceUtils.dummyClusterOperatorConfig(VERSIONS));
+                new MockCertManager(), new PasswordGenerator(10, "a", "a"), supplier, ResourceUtils.dummyClusterOperatorConfig(VERSIONS),
+                licenseExpirationWatcher);
 
         Checkpoint async = context.checkpoint();
         ops.createOrUpdate(new Reconciliation("test-trigger", KafkaBridge.RESOURCE_KIND, kbNamespace, kbName), kb)
@@ -564,7 +606,8 @@ public class KafkaBridgeAssemblyOperatorTest {
         when(mockPdbOps.reconcile(any(), anyString(), any(), any())).thenReturn(Future.succeededFuture(ReconcileResult.created(new PodDisruptionBudget())));
 
         KafkaBridgeAssemblyOperator ops = new KafkaBridgeAssemblyOperator(vertx, new PlatformFeaturesAvailability(true, kubernetesVersion),
-                new MockCertManager(), new PasswordGenerator(10, "a", "a"), supplier, ResourceUtils.dummyClusterOperatorConfig(VERSIONS));
+                new MockCertManager(), new PasswordGenerator(10, "a", "a"), supplier, ResourceUtils.dummyClusterOperatorConfig(VERSIONS),
+                licenseExpirationWatcher);
 
         Checkpoint async = context.checkpoint();
         ops.createOrUpdate(new Reconciliation("test-trigger", KafkaBridge.RESOURCE_KIND, kbNamespace, kbName), scaledDownCluster)
@@ -624,7 +667,8 @@ public class KafkaBridgeAssemblyOperatorTest {
                 new PlatformFeaturesAvailability(true, kubernetesVersion),
                 new MockCertManager(), new PasswordGenerator(10, "a", "a"),
                 supplier,
-                ResourceUtils.dummyClusterOperatorConfig(VERSIONS)) {
+                ResourceUtils.dummyClusterOperatorConfig(VERSIONS),
+                licenseExpirationWatcher) {
 
             @Override
             public Future<KafkaBridgeStatus> createOrUpdate(Reconciliation reconciliation, KafkaBridge kafkaBridgeAssembly) {
@@ -681,7 +725,8 @@ public class KafkaBridgeAssemblyOperatorTest {
                 new PlatformFeaturesAvailability(true, kubernetesVersion),
                 new MockCertManager(), new PasswordGenerator(10, "a", "a"),
                 supplier,
-                ResourceUtils.dummyClusterOperatorConfig(VERSIONS));
+                ResourceUtils.dummyClusterOperatorConfig(VERSIONS),
+                licenseExpirationWatcher);
 
         Checkpoint async = context.checkpoint();
         ops.reconcile(new Reconciliation("test-trigger", KafkaBridge.RESOURCE_KIND, kbNamespace, kbName))
@@ -727,7 +772,8 @@ public class KafkaBridgeAssemblyOperatorTest {
                 new PlatformFeaturesAvailability(true, kubernetesVersion),
                 new MockCertManager(), new PasswordGenerator(10, "a", "a"),
                 supplier,
-                ResourceUtils.dummyClusterOperatorConfig(VERSIONS));
+                ResourceUtils.dummyClusterOperatorConfig(VERSIONS),
+                licenseExpirationWatcher);
 
         Checkpoint async = context.checkpoint();
         ops.reconcile(new Reconciliation("test-trigger", KafkaBridge.RESOURCE_KIND, kbNamespace, kbName))
