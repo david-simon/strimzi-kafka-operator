@@ -154,7 +154,8 @@ function helm_adjustment {
 
 function maven_version_setup {
   export MAVEN_ARGS="-B"
-  RELEASE_VERSION="${DOCKER_TAG}" make release_maven
+  strimzi_version="$(jq -r ".strimzi" "${versions_json_file}")"
+  RELEASE_VERSION="${strimzi_version}" make release_maven
 }
 
 function configure_systemtest {
