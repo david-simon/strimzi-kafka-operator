@@ -59,7 +59,7 @@ public class KafkaTemplates {
     }
 
     public static KafkaBuilder kafkaEphemeralWithoutNodePools(String clusterName, int kafkaReplicas, int zookeeperReplicas) {
-        Kafka kafka = getKafkaFromYaml(TestConstants.PATH_TO_KAFKA_EPHEMERAL_CONFIG, false);
+        Kafka kafka = getKafkaFromYaml(TestConstants.PATH_TO_KAFKA_EPHEMERAL_CONFIG, true);
         return defaultKafkaWithoutNodePools(kafka, clusterName, kafkaReplicas, zookeeperReplicas);
     }
 
@@ -104,7 +104,7 @@ public class KafkaTemplates {
     }
 
     public static KafkaBuilder kafkaPersistentWithoutNodePools(String clusterName, int kafkaReplicas, int zookeeperReplicas) {
-        Kafka kafka = getKafkaFromYaml(TestConstants.PATH_TO_KAFKA_EPHEMERAL_CONFIG, false);
+        Kafka kafka = getKafkaFromYaml(TestConstants.PATH_TO_KAFKA_EPHEMERAL_CONFIG, true);
 
         return defaultKafkaWithoutNodePools(kafka, clusterName, kafkaReplicas, zookeeperReplicas)
             .editSpec()
@@ -165,7 +165,7 @@ public class KafkaTemplates {
     // -------------------------------------------------------------------------------------------
 
     public static KafkaBuilder kafkaWithMetrics(String namespaceName, String clusterName, int kafkaReplicas, int zookeeperReplicas) {
-        Kafka kafka = getKafkaFromYaml(TestConstants.PATH_TO_KAFKA_METRICS_CONFIG, false);
+        Kafka kafka = getKafkaFromYaml(TestConstants.PATH_TO_KAFKA_METRICS_CONFIG, true);
         String configMapName = clusterName + METRICS_KAFKA_CONFIG_MAP_SUFFIX;
 
         KafkaBuilder kafkaBuilder = defaultKafka(kafka, clusterName, kafkaReplicas, zookeeperReplicas)
@@ -265,7 +265,7 @@ public class KafkaTemplates {
     // -------------------------------------------------------------------------------------------
 
     public static KafkaBuilder kafkaWithCruiseControl(String clusterName, int kafkaReplicas, int zookeeperReplicas) {
-        Kafka kafka = getKafkaFromYaml(TestConstants.PATH_TO_KAFKA_CRUISE_CONTROL_CONFIG, false);
+        Kafka kafka = getKafkaFromYaml(TestConstants.PATH_TO_KAFKA_CRUISE_CONTROL_CONFIG, true);
 
         return defaultKafka(kafka, clusterName, kafkaReplicas, zookeeperReplicas)
             .editSpec()
