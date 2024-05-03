@@ -11,4 +11,4 @@ export JAVA_HOME=/usr/lib/jvm/java-17-openjdk
 export TESTCONTAINERS_RYUK_DISABLED=TRUE
 export TESTCONTAINERS_CHECKS_DISABLE=TRUE
 
-mvn -B -Dsurefire.rerunFailingTestsCount=5 -Dfailsafe.rerunFailingTestsCount=2 verify
+mvn -B -Dsurefire.rerunFailingTestsCount=5 -Dfailsafe.rerunFailingTestsCount=2 verify "${@}"
